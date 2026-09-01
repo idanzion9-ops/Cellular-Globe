@@ -1,0 +1,2121 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cellular Globe — Mobile Operator Frequencies</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#141A24; --bg2:#1A2230; --panel:#202A3A; --panel2:#26313F;
+  --line:#2E3A4E; --line2:#3E4E67;
+  --txt:#E8EDF5; --txt2:#9AAAC0; --txt3:#6C7C94;
+  --f1:#EFA13C; --f2:#35C4A4; --f3:#5A9BF6; --f4:#A97BF0; --f5:#F0568F;
+  --ok:#35C4A4; --warn:#EFA13C; --idle:#7E8CA3; --plan:#5A9BF6; --sunset:#E4667E;
+  --shadow:0 10px 30px rgba(0,0,0,.35);
+  --r:10px;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  --disp:"Space Grotesk","IBM Plex Sans",system-ui,sans-serif;
+}
+:root[data-theme="light"]{
+  --bg:#EEF1F6; --bg2:#F6F8FB; --panel:#FFFFFF; --panel2:#F2F5F9;
+  --line:#DCE3ED; --line2:#C3CEDE;
+  --txt:#141C29; --txt2:#5A6B84; --txt3:#8494AB;
+  --f1:#C87614; --f2:#0F8E75; --f3:#2B6FD1; --f4:#7A45C9; --f5:#C92C63;
+  --idle:#8494AB;
+  --shadow:0 8px 24px rgba(20,32,50,.10);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--txt); font-family:var(--sans);
+  font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4{font-family:var(--disp); font-weight:600; margin:0; letter-spacing:-.01em}
+button,input,select,textarea{font:inherit; color:inherit}
+button{cursor:pointer}
+a{color:var(--f3)}
+.tnum{font-variant-numeric:tabular-nums}
+:focus-visible{outline:2px solid var(--f3); outline-offset:2px; border-radius:4px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- shell ---------- */
+.wrap{max-width:1360px;margin:0 auto;padding:0 20px calc(80px + env(safe-area-inset-bottom))}
+header.top{
+  position:sticky; top:0; z-index:40; background:color-mix(in srgb,var(--bg) 88%,transparent);
+  backdrop-filter:blur(12px); border-bottom:1px solid var(--line);
+}
+.top-in{max-width:1360px;margin:0 auto;padding:12px 20px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.brand{display:flex;align-items:baseline;gap:10px;margin-right:auto}
+.brand h1{font-size:19px;letter-spacing:-.02em}
+.brand .sub{color:var(--txt3);font-size:12.5px}
+.tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{
+  background:var(--panel); border:1px solid var(--line2); color:var(--txt);
+  padding:7px 12px; border-radius:8px; font-size:13.5px; font-weight:500;
+  display:inline-flex; align-items:center; gap:7px; transition:background .15s,border-color .15s;
+}
+.btn:hover{background:var(--panel2); border-color:var(--txt3)}
+.btn.p{background:var(--f3); border-color:var(--f3); color:#0B1220; font-weight:600}
+.btn.p:hover{filter:brightness(1.08)}
+.btn.on{background:var(--f2); border-color:var(--f2); color:#08201A; font-weight:600}
+.btn.sm{padding:4px 9px;font-size:12.5px;border-radius:7px}
+.btn.danger{color:var(--sunset);border-color:color-mix(in srgb,var(--sunset) 45%,transparent)}
+input[type=text],input[type=number],select,textarea{
+  background:var(--bg2); border:1px solid var(--line2); border-radius:8px;
+  padding:7px 10px; font-size:14px; width:100%;
+}
+input::placeholder{color:var(--txt3)}
+
+/* ---------- hero ---------- */
+.hero{padding:26px 0 8px; display:grid; grid-template-columns:1fr; gap:18px}
+.hero-head{display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap}
+.hero-head .ttl{font-family:var(--disp);font-size:clamp(30px,5vw,46px);font-weight:700;letter-spacing:-.03em;line-height:1}
+.hero-head .flag{font-size:clamp(30px,5vw,44px);line-height:1}
+.meta{display:flex;gap:18px;flex-wrap:wrap;color:var(--txt2);font-size:13px;padding-bottom:4px}
+.meta b{color:var(--txt);font-weight:600}
+
+/* spectrum chart */
+.chart{
+  background:var(--panel); border:1px solid var(--line); border-radius:14px;
+  padding:16px 16px 10px; box-shadow:var(--shadow); overflow-x:auto;
+}
+.chart-inner{min-width:720px}
+.seg-head{display:flex;gap:8px;margin-bottom:10px}
+.seg-h{flex:0 0 auto;border-bottom:1px solid var(--line2);padding-bottom:6px}
+.seg-h .nm{font-family:var(--disp);font-size:12.5px;font-weight:600;color:var(--txt2)}
+.seg-h .rg{font-size:11px;color:var(--txt3);font-variant-numeric:tabular-nums}
+.lane{display:flex;gap:8px;align-items:stretch;margin-bottom:6px}
+.lane-lbl{
+  flex:0 0 132px; min-width:132px; font-size:12.5px; font-weight:600; display:flex; align-items:center; gap:7px;
+  padding-right:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.lane-lbl i{width:9px;height:9px;border-radius:2px;flex:0 0 auto;display:block}
+.seg{flex:0 0 auto;position:relative;height:26px;border-radius:4px;background:var(--bg2);
+     border:1px solid var(--line);}
+.blk{position:absolute;top:1px;bottom:1px;border-radius:3px;font-size:9.5px;overflow:hidden;
+     display:flex;align-items:center;justify-content:center;color:#0A1018;font-weight:700;
+     letter-spacing:.01em;min-width:2px;cursor:default}
+.blk.idle{background:transparent!important;border:1.5px dashed currentColor;color:inherit;
+  background-image:repeating-linear-gradient(135deg,currentColor 0 1.5px,transparent 1.5px 6px)!important;opacity:.85}
+.blk.plan{background:transparent!important;border:1.5px dotted currentColor;opacity:.7}
+.chart-foot{display:flex;gap:16px;flex-wrap:wrap;padding-top:8px;border-top:1px solid var(--line);
+  margin-top:6px;font-size:11.5px;color:var(--txt2)}
+.lg{display:flex;align-items:center;gap:6px}
+.lg .sw{width:20px;height:11px;border-radius:3px;display:block}
+.lg .sw.idle{background-image:repeating-linear-gradient(135deg,var(--txt2) 0 1.5px,transparent 1.5px 5px);border:1px dashed var(--txt2)}
+.lg .sw.plan{border:1px dotted var(--txt2)}
+
+/* ---------- layout ---------- */
+.grid{display:grid;grid-template-columns:264px minmax(0,1fr);gap:20px;margin-top:24px;align-items:start}
+.rail{position:sticky;top:74px;background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  padding:12px;max-height:calc(100vh - 100px);overflow:auto}
+.rail h3{font-size:12px;color:var(--txt3);font-weight:600;margin:2px 0 8px}
+.rail .search{margin-bottom:10px}
+.clist{display:flex;flex-direction:column;gap:2px}
+.citem{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:8px;font-size:14px;
+  border:1px solid transparent;background:none;width:100%;text-align:left}
+.citem:hover{background:var(--panel2)}
+.citem.sel{background:var(--bg2);border-color:var(--line2);font-weight:600}
+.citem .fl{font-size:16px}
+.citem .ct{margin-left:auto;font-size:11px;color:var(--txt3);font-variant-numeric:tabular-nums}
+
+/* operator card */
+.ops{display:flex;flex-direction:column;gap:16px;min-width:0}
+.op{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;min-width:0}
+.op-head{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line);
+  flex-wrap:wrap}
+.op-mark{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;font-family:var(--disp);
+  font-weight:700;font-size:14px;color:#0A1018;flex:0 0 auto}
+.op-name{font-family:var(--disp);font-size:17px;font-weight:600}
+.op-sub{font-size:11.5px;color:var(--txt3);font-variant-numeric:tabular-nums}
+.techs{display:flex;gap:5px;margin-left:auto;flex-wrap:wrap}
+.tb{font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;border:1px solid var(--line2);
+  color:var(--txt2);font-family:var(--disp)}
+.tb.live{border-color:color-mix(in srgb,var(--ok) 55%,transparent);color:var(--ok);
+  background:color-mix(in srgb,var(--ok) 12%,transparent)}
+.tb.idleT{border-style:dashed;color:var(--idle)}
+.op-body{padding:4px 16px 14px}
+.tech-grp{margin-top:14px; overflow-x:auto; -webkit-overflow-scrolling:touch}
+.tech-grp>h4{font-size:13px;color:var(--txt2);display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.tech-grp>h4 .ln{flex:1;height:1px;background:var(--line)}
+.tech-grp>h4 .cnt{font-size:11px;color:var(--txt3);font-weight:500}
+
+table.al{width:100%;min-width:520px;border-collapse:collapse;font-size:13px}
+table.al th{font-size:10.5px;font-weight:600;color:var(--txt3);text-align:left;padding:5px 8px;
+  border-bottom:1px solid var(--line);white-space:nowrap;font-family:var(--disp)}
+table.al td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top;
+  font-variant-numeric:tabular-nums}
+table.al tr:last-child td{border-bottom:none}
+table.al tr.dim td{opacity:.72}
+.bandcell{display:flex;flex-direction:column;gap:2px;min-width:112px}
+.bandid{font-family:var(--disp);font-weight:700;font-size:13.5px;display:flex;align-items:center;gap:6px}
+.bandid i{width:8px;height:8px;border-radius:2px;display:block;flex:0 0 auto}
+.bandnm{font-size:11px;color:var(--txt3)}
+.chip{display:inline-block;font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:5px;
+  border:1px solid var(--line2);color:var(--txt2);white-space:nowrap}
+.st-active{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 50%,transparent);background:color-mix(in srgb,var(--ok) 12%,transparent)}
+.st-licensed{color:var(--idle);border-color:var(--line2);border-style:dashed}
+.st-planned{color:var(--plan);border-color:color-mix(in srgb,var(--plan) 50%,transparent);border-style:dotted}
+.st-refarm{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 50%,transparent)}
+.st-sunset{color:var(--sunset);border-color:color-mix(in srgb,var(--sunset) 45%,transparent)}
+.ch{font-weight:600}
+.chsub{font-size:11px;color:var(--txt3)}
+.note{font-size:11.5px;color:var(--txt3);font-style:italic}
+.rowact{display:flex;gap:4px;justify-content:flex-end}
+.iconbtn{background:none;border:1px solid transparent;border-radius:6px;padding:2px 6px;
+  font-size:12px;color:var(--txt3)}
+.iconbtn:hover{border-color:var(--line2);color:var(--txt)}
+
+.empty{padding:40px 20px;text-align:center;color:var(--txt2);border:1px dashed var(--line2);
+  border-radius:14px}
+.empty h3{margin-bottom:6px;font-size:17px;color:var(--txt)}
+
+/* ---------- modal ---------- */
+.ovl{position:fixed;inset:0;background:rgba(8,12,20,.6);backdrop-filter:blur(3px);z-index:90;
+  display:grid;place-items:center;padding:18px}
+.ovl[hidden]{display:none}
+.modal{background:var(--panel);border:1px solid var(--line2);border-radius:14px;width:min(620px,100%);
+  max-height:88vh;overflow:auto;box-shadow:var(--shadow)}
+.modal header{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line);
+  position:sticky;top:0;background:var(--panel)}
+.modal header h3{font-size:16px;margin-right:auto}
+.modal .body{padding:16px 18px}
+.modal footer{display:flex;gap:8px;justify-content:flex-end;padding:12px 18px;border-top:1px solid var(--line);
+  position:sticky;bottom:0;background:var(--panel)}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.fr.one{grid-template-columns:1fr}
+.f label{display:block;font-size:11.5px;color:var(--txt2);margin-bottom:4px;font-weight:500}
+.hint{font-size:11.5px;color:var(--txt3);margin-top:5px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--panel);
+  border:1px solid var(--line2);padding:10px 16px;border-radius:10px;box-shadow:var(--shadow);z-index:99;
+  font-size:13.5px}
+.toast[hidden]{display:none}
+
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0 0}
+.fchip{font-size:12.5px;padding:5px 11px;border-radius:20px;border:1px solid var(--line);
+  background:transparent;color:var(--txt3);font-weight:500;text-decoration:line-through;
+  text-decoration-thickness:1px;opacity:.7}
+.fchip:hover{opacity:1}
+.fchip.on{background:var(--panel);color:var(--txt);border-color:var(--line2);
+  text-decoration:none;opacity:1;font-weight:600}
+.srcline{margin-top:10px;font-size:12px;color:var(--txt3)}
+
+@media(max-width:900px){
+  .grid{grid-template-columns:minmax(0,1fr)}
+  .rail{position:static;max-height:none}
+  .clist{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:4px}
+  table.al{font-size:12.5px}
+  table.al th:nth-child(4),table.al td:nth-child(4){display:none}
+}
+@media(max-width:600px){
+  .wrap{padding:0 12px 60px}.top-in{padding:10px 12px}
+  table.al th:nth-child(3),table.al td:nth-child(3){display:none}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <div class="brand">
+      <h1>Cellular Globe</h1>
+      <span class="sub">Mobile operator frequencies &amp; channel numbers</span>
+    </div>
+    <div class="tools">
+      <button class="btn sm" id="btnTheme" title="Switch light / dark">◐ Theme</button>
+      <button class="btn sm" id="btnImport">Import JSON</button>
+      <button class="btn sm" id="btnExport">Export JSON</button>
+      <button class="btn sm danger" id="btnReset">Reset data</button>
+      <button class="btn" id="btnEdit">Edit mode: off</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <section class="hero">
+    <div class="hero-head">
+      <span class="flag" id="hFlag">🌍</span>
+      <div>
+        <div class="ttl" id="hName">—</div>
+        <div class="meta" id="hMeta"></div>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:8px" id="hActions"></div>
+    </div>
+    <div class="chart"><div class="chart-inner" id="chart"></div></div>
+    <div class="srcline" id="srcline"></div>
+  </section>
+
+  <div class="filters" id="filters"></div>
+
+  <div class="grid">
+    <aside class="rail">
+      <div class="search"><input type="text" id="q" placeholder="Search country or operator…"></div>
+      <h3>Countries</h3>
+      <div class="clist" id="clist"></div>
+      <div style="margin-top:10px" class="editonly" hidden>
+        <button class="btn sm" id="btnAddCountry" style="width:100%">+ Add country</button>
+      </div>
+    </aside>
+    <main class="ops" id="ops"></main>
+  </div>
+</div>
+
+<div class="ovl" id="ovl" hidden><div class="modal" id="modal"></div></div>
+<div class="toast" id="toast" hidden></div>
+<input type="file" id="fileIn" accept="application/json" hidden>
+
+<script>
+/* ============================================================
+   3GPP BAND REGISTRY
+   dl / ul  = band edges in MHz (for TDD, ul === dl)
+   ea       = [EARFCN offset DL, EARFCN offset UL]  (TS 36.101)
+   ua       = UARFCN frequency offset in MHz        (TS 25.101)
+   nr       = 5G NR band label if the band exists in NR (TS 38.104)
+   ============================================================ */
+const BAND = {
+  B1 :{nm:"2100 IMT",       dup:"FDD", dl:[2110,2170], ul:[1920,1980], ea:[0,18000],       ua:0,    nr:"n1"},
+  B2 :{nm:"1900 PCS",       dup:"FDD", dl:[1930,1990], ul:[1850,1910], ea:[600,18600],     ua:0,    nr:"n2"},
+  B3 :{nm:"1800 DCS",       dup:"FDD", dl:[1805,1880], ul:[1710,1785], ea:[1200,19200],    ua:1575, nr:"n3"},
+  B4 :{nm:"1700/2100 AWS-1",dup:"FDD", dl:[2110,2155], ul:[1710,1755], ea:[1950,19950],    ua:1805, nr:null},
+  B5 :{nm:"850 CLR",        dup:"FDD", dl:[869,894],   ul:[824,849],   ea:[2400,20400],    ua:0,    nr:"n5"},
+  B7 :{nm:"2600 IMT-E",     dup:"FDD", dl:[2620,2690], ul:[2500,2570], ea:[2750,20750],    ua:2175, nr:"n7"},
+  B8 :{nm:"900 E-GSM",      dup:"FDD", dl:[925,960],   ul:[880,915],   ea:[3450,21450],    ua:340,  nr:"n8"},
+  B11:{nm:"1500 Lower PDC", dup:"FDD", dl:[1475.9,1495.9], ul:[1427.9,1447.9], ea:[4750,22750], ua:1350, nr:null},
+  B12:{nm:"700 Lower SMH",  dup:"FDD", dl:[729,746],   ul:[699,716],   ea:[5010,23010],    ua:null, nr:"n12"},
+  B13:{nm:"700 Upper C",    dup:"FDD", dl:[746,756],   ul:[777,787],   ea:[5180,23180],    ua:null, nr:"n13"},
+  B14:{nm:"700 Upper D (PS)",dup:"FDD",dl:[758,768],   ul:[788,798],   ea:[5280,23280],    ua:null, nr:"n14"},
+  B17:{nm:"700 Lower B/C",  dup:"FDD", dl:[734,746],   ul:[704,716],   ea:[5730,23730],    ua:null, nr:null},
+  B18:{nm:"800 Japan lower",dup:"FDD", dl:[860,875],   ul:[815,830],   ea:[5850,23850],    ua:null, nr:"n18"},
+  B19:{nm:"800 Japan upper",dup:"FDD", dl:[875,890],   ul:[830,845],   ea:[6000,24000],    ua:735,  nr:"n19"},
+  B20:{nm:"800 DD (EU)",    dup:"FDD", dl:[791,821],   ul:[832,862],   ea:[6150,24150],    ua:null, nr:"n20"},
+  B21:{nm:"1500 Upper PDC", dup:"FDD", dl:[1495.9,1510.9], ul:[1447.9,1462.9], ea:[6450,24450], ua:null, nr:null},
+  B25:{nm:"1900 PCS + G",   dup:"FDD", dl:[1930,1995], ul:[1850,1915], ea:[8040,26040],    ua:0,    nr:"n25"},
+  B26:{nm:"850 ext / SMR",  dup:"FDD", dl:[859,894],   ul:[814,849],   ea:[8690,26690],    ua:null, nr:"n26"},
+  B28:{nm:"700 APT",        dup:"FDD", dl:[758,803],   ul:[703,748],   ea:[9210,27210],    ua:null, nr:"n28"},
+  B29:{nm:"700 Lower D/E",  dup:"SDL", dl:[717,728],   ul:[717,728],   ea:[9660,null],     ua:null, nr:"n29"},
+  B30:{nm:"2300 WCS",       dup:"FDD", dl:[2350,2360], ul:[2305,2315], ea:[9770,27660],    ua:null, nr:"n30"},
+  B32:{nm:"1500 L-band SDL",dup:"SDL", dl:[1452,1496], ul:[1452,1496], ea:[9920,null],     ua:null, nr:"n75"},
+  B34:{nm:"2000 TDD",       dup:"TDD", dl:[2010,2025], ul:[2010,2025], ea:[36200,36200],   ua:0,    nr:"n34"},
+  B38:{nm:"2600 TDD",       dup:"TDD", dl:[2570,2620], ul:[2570,2620], ea:[37750,37750],   ua:0,    nr:"n38"},
+  B39:{nm:"1900 TDD (China)",dup:"TDD",dl:[1880,1920], ul:[1880,1920], ea:[38250,38250],   ua:0,    nr:"n39"},
+  B40:{nm:"2300 TDD",       dup:"TDD", dl:[2300,2400], ul:[2300,2400], ea:[38650,38650],   ua:0,    nr:"n40"},
+  B41:{nm:"2500 TDD (BRS)", dup:"TDD", dl:[2496,2690], ul:[2496,2690], ea:[39650,39650],   ua:0,    nr:"n41"},
+  B42:{nm:"3500 TDD",       dup:"TDD", dl:[3400,3600], ul:[3400,3600], ea:[41590,41590],   ua:null, nr:null},
+  B43:{nm:"3700 TDD",       dup:"TDD", dl:[3600,3800], ul:[3600,3800], ea:[43590,43590],   ua:null, nr:null},
+  B46:{nm:"5 GHz LAA",      dup:"TDD", dl:[5150,5925], ul:[5150,5925], ea:[46790,46790],   ua:null, nr:null},
+  B48:{nm:"3550 CBRS",      dup:"TDD", dl:[3550,3700], ul:[3550,3700], ea:[55240,55240],   ua:null, nr:"n48"},
+  B66:{nm:"1700/2100 AWS-3",dup:"FDD", dl:[2110,2200], ul:[1710,1780], ea:[66436,131972],  ua:null, nr:"n66"},
+  B70:{nm:"AWS-4 / H-block", dup:"FDD",dl:[1995,2020], ul:[1695,1710], ea:[68336,132672],  ua:null, nr:"n70"},
+  B71:{nm:"600 MHz",        dup:"FDD", dl:[617,652],   ul:[663,698],   ea:[68586,133122],  ua:null, nr:"n71"},
+  n77:{nm:"3.7 GHz TDD",    dup:"TDD", dl:[3300,4200], ul:[3300,4200], ea:null, ua:null, nr:"n77", nrOnly:1},
+  n78:{nm:"3.5 GHz TDD",    dup:"TDD", dl:[3300,3800], ul:[3300,3800], ea:null, ua:null, nr:"n78", nrOnly:1},
+  n79:{nm:"4.7 GHz TDD",    dup:"TDD", dl:[4400,5000], ul:[4400,5000], ea:null, ua:null, nr:"n79", nrOnly:1},
+  n257:{nm:"28 GHz mmWave", dup:"TDD", dl:[26500,29500], ul:[26500,29500], ea:null, ua:null, nr:"n257", nrOnly:1},
+  n258:{nm:"26 GHz mmWave", dup:"TDD", dl:[24250,27500], ul:[24250,27500], ea:null, ua:null, nr:"n258", nrOnly:1},
+  n259:{nm:"41 GHz mmWave", dup:"TDD", dl:[39500,43500], ul:[39500,43500], ea:null, ua:null, nr:"n259", nrOnly:1},
+  n260:{nm:"39 GHz mmWave", dup:"TDD", dl:[37000,40000], ul:[37000,40000], ea:null, ua:null, nr:"n260", nrOnly:1},
+  n261:{nm:"28 GHz US",     dup:"TDD", dl:[27500,28350], ul:[27500,28350], ea:null, ua:null, nr:"n261", nrOnly:1}
+};
+
+const NR2B = {};
+Object.keys(BAND).forEach(k=>{ if(BAND[k].nr && !BAND[BAND[k].nr]) NR2B[BAND[k].nr]=k; });
+function canonBand(b){ return BAND[b] ? b : (NR2B[b] || b); }
+
+const TECHS = ["GSM","UMTS","LTE","NR"];
+const TECH_LABEL = {GSM:"2G · GSM / GPRS / EDGE", UMTS:"3G · UMTS / HSPA+", LTE:"4G · LTE / LTE-A", NR:"5G · NR"};
+const STATUS = {
+  active  :{l:"In service",        d:"Deployed and carrying live traffic"},
+  refarm  :{l:"Refarming",         d:"Being re-allocated to a newer technology"},
+  licensed:{l:"Held, not deployed",d:"Licensed to the operator but no live carrier"},
+  planned :{l:"Planned",           d:"Awarded or announced, launch pending"},
+  sunset  :{l:"Shutting down",     d:"Legacy carrier scheduled for switch-off"},
+  retired :{l:"Switched off",      d:"Licence surrendered or the carrier has already been turned off"}
+};
+
+/* colour keyed to position in the spectrum, not to brand */
+function freqColor(mhz){
+  if(mhz < 1000)  return "var(--f1)";
+  if(mhz < 2300)  return "var(--f2)";
+  if(mhz < 3300)  return "var(--f3)";
+  if(mhz < 7125)  return "var(--f4)";
+  return "var(--f5)";
+}
+
+/* ---------- absolute channel-number maths ---------- */
+const r1 = v => Math.round(v*10)/10;
+
+function gsmArfcn(ulMHz){
+  const f = ulMHz;
+  if(f>=890 && f<=915)   return Math.round((f-890)/0.2);              // P-GSM 900: 0..124
+  if(f>=880 && f<890)    return 1024 + Math.round((f-890)/0.2);       // E-GSM: 975..1023
+  if(f>=1710 && f<=1785) return 512 + Math.round((f-1710.2)/0.2);     // DCS 1800
+  if(f>=824 && f<=849)   return 128 + Math.round((f-824.2)/0.2);      // GSM 850
+  if(f>=1850 && f<=1910) return 512 + Math.round((f-1850.2)/0.2);     // PCS 1900
+  return null;
+}
+function uarfcn(band, mhz){
+  band = canonBand(band); const b = BAND[band]; if(!b || b.ua===null || b.ua===undefined) return null;
+  return Math.round(5*(mhz - b.ua));
+}
+function earfcn(band, mhz, dir){
+  band = canonBand(band); const b = BAND[band]; if(!b || !b.ea) return null;
+  const off = dir==="ul" ? b.ea[1] : b.ea[0];
+  if(off===null||off===undefined) return null;
+  const low = dir==="ul" ? b.ul[0] : b.dl[0];
+  return Math.round(off + 10*(mhz - low));
+}
+function nrarfcn(mhz){
+  const kHz = mhz*1000;
+  if(mhz < 3000)   return Math.round(kHz/5);
+  if(mhz < 24250)  return Math.round(600000 + (kHz-3000000)/15);
+  return Math.round(2016667 + (kHz-24250080)/60);
+}
+/* channel numbers for one allocation block, per technology */
+function channels(tech, band, lo, hi, dir){
+  band = canonBand(band); const b = BAND[band]; if(!b) return null;
+  let l=lo, h=hi;
+  if(dir==="ul" && b.dup==="FDD"){ const gap=b.dl[0]-b.ul[0]; l=lo-gap; h=hi-gap; }
+  const c = (l+h)/2;
+  if(tech==="GSM"){
+    const a1=gsmArfcn(dir==="ul"?l:l-(b.dl[0]-b.ul[0])), a2=gsmArfcn(dir==="ul"?h:h-(b.dl[0]-b.ul[0]));
+    if(a1===null) return null;
+    return {label:"ARFCN", lo:Math.min(a1,a2), hi:Math.max(a1,a2), c:null, fLo:r1(l), fHi:r1(h), fC:r1(c)};
+  }
+  if(tech==="UMTS"){
+    const u=uarfcn(band,c); if(u===null) return null;
+    return {label:"UARFCN", lo:uarfcn(band,l+2.5), hi:uarfcn(band,h-2.5), c:u, fLo:r1(l), fHi:r1(h), fC:r1(c)};
+  }
+  if(tech==="LTE"){
+    const e=earfcn(band,c,dir); if(e===null) return null;
+    return {label:"EARFCN", lo:earfcn(band,l,dir), hi:earfcn(band,h,dir), c:e, fLo:r1(l), fHi:r1(h), fC:r1(c)};
+  }
+  if(tech==="NR"){
+    return {label:"NR-ARFCN", lo:nrarfcn(l), hi:nrarfcn(h), c:nrarfcn(c), fLo:r1(l), fHi:r1(h), fC:r1(c)};
+  }
+  return null;
+}
+function bandLabel(tech, band){
+  band = canonBand(band); const b=BAND[band]; if(!b) return band;
+  if(tech==="NR") return b.nr || band;
+  if(tech==="UMTS"){
+    const rom={B1:"I",B2:"II",B3:"III",B4:"IV",B5:"V",B7:"VII",B8:"VIII",B11:"XI",B19:"XIX",B34:"a",B39:"f"};
+    return rom[band] ? "Band "+rom[band] : band;
+  }
+  if(tech==="GSM"){
+    const g={B8:"GSM 900",B3:"GSM 1800",B5:"GSM 850",B2:"GSM 1900",B25:"GSM 1900"};
+    return g[band] || band;
+  }
+  return band;
+}
+
+</script>
+<script>
+/* ============================================================
+   SEED DATASET
+   Allocation row = [ technology, band, blockLow, blockHigh, status, note? ]
+   blockLow / blockHigh are DOWNLINK edges in MHz (for TDD & SDL: the
+   whole block). The matching uplink block is derived from the band's
+   duplex spacing, so paired blocks stay consistent automatically.
+   ============================================================ */
+const SEED = {
+version: 3,
+updated: "September 2026",
+countries: [
+
+{id:"IL", name:"Israel", flag:"🇮🇱", iso3:"ISR", mcc:"425",
+ note:"Four network operators plus several MVNOs (Golan, We4G, 019, Rami Levy) that ride on host networks. 5G launched September 2020 on 700 MHz and 3.5 GHz.",
+ operators:[
+  {n:"Pelephone", mnc:"425-03", note:"Bezeq group. Started as a CDMA network; all CDMA carriers are long gone.", al:[
+    ["UMTS","B1",2110,2125,"sunset","3G being wound down"],
+    ["LTE","B1",2110,2125,"active"],
+    ["LTE","B3",1860,1875,"active"],
+    ["LTE","B7",2620,2640,"active"],
+    ["LTE","B28",758,768,"active"],
+    ["LTE","B8",945,955,"active"],
+    ["NR","n78",3500,3600,"active","100 MHz from the 2020 5G tender"],
+    ["NR","n28",758,768,"active","DSS with LTE"],
+    ["NR","n75",1482,1496,"licensed","1500 MHz supplementary downlink, not switched on"]
+  ]},
+  {n:"Cellcom", mnc:"425-02", note:"Hosts Golan Telecom and several MVNOs. Shares RAN elements with Partner in parts of the country.", al:[
+    ["GSM","B8",935,945,"sunset","Legacy 2G, minimal traffic"],
+    ["GSM","B3",1830,1835,"sunset"],
+    ["UMTS","B1",2125,2140,"sunset"],
+    ["LTE","B1",2125,2140,"active"],
+    ["LTE","B3",1830,1845,"active"],
+    ["LTE","B7",2640,2660,"active"],
+    ["LTE","B28",768,778,"active"],
+    ["LTE","B8",935,945,"refarm","Being converted from GSM"],
+    ["NR","n78",3600,3700,"active","100 MHz"],
+    ["NR","n28",768,778,"active"],
+    ["NR","n75",1452,1467,"licensed","Held, no live carrier"]
+  ]},
+  {n:"Partner", mnc:"425-01", note:"Formerly Orange Israel. Runs a shared radio network with Hot Mobile.", al:[
+    ["GSM","B8",925,935,"sunset"],
+    ["GSM","B3",1845,1850,"sunset"],
+    ["UMTS","B1",2140,2155,"sunset"],
+    ["UMTS","B8",925,935,"retired"],
+    ["LTE","B1",2140,2155,"active"],
+    ["LTE","B3",1845,1860,"active"],
+    ["LTE","B7",2660,2680,"active"],
+    ["LTE","B28",778,788,"active"],
+    ["LTE","B32",1467,1482,"active","Supplementary downlink"],
+    ["NR","n78",3700,3760,"active"],
+    ["NR","n28",778,788,"active"]
+  ]},
+  {n:"Hot Mobile", mnc:"425-07", note:"Altice group. Network-sharing partner of Partner; formerly the iDEN operator Mirs.", al:[
+    ["UMTS","B1",2155,2170,"sunset"],
+    ["LTE","B1",2155,2170,"active"],
+    ["LTE","B3",1815,1830,"active"],
+    ["LTE","B7",2680,2690,"active"],
+    ["NR","n78",3760,3800,"active","40 MHz"],
+    ["NR","n28",778,788,"licensed","Shared holding with Partner"]
+  ]}
+]},
+
+{id:"US", name:"United States", flag:"🇺🇸", iso3:"USA", mcc:"310-312",
+ note:"Licences are county- and market-based, so real holdings vary by geography. The blocks below are typical nationwide averages.",
+ operators:[
+  {n:"Verizon", mnc:"311-480", note:"CDMA 1X / EV-DO switched off at the end of 2022. Never operated GSM or UMTS.", al:[
+    ["LTE","B13",746,756,"active","Original nationwide LTE layer"],
+    ["LTE","B2",1970,1990,"active"],
+    ["LTE","B4",2110,2130,"active"],
+    ["LTE","B5",884,894,"active"],
+    ["LTE","B66",2155,2180,"active","AWS-3"],
+    ["LTE","B46",5150,5250,"active","Licence-assisted access"],
+    ["LTE","B48",3550,3700,"active","CBRS, general authorised access"],
+    ["NR","n5",884,894,"active","Dynamic spectrum sharing with LTE"],
+    ["NR","n2",1970,1990,"active","DSS"],
+    ["NR","n66",2155,2180,"active","AWS-3"],
+    ["NR","n77",3700,3760,"active","C-band, first tranche"],
+    ["NR","n77",3760,3860,"licensed","C-band held for later clearing"],
+    ["NR","n261",27925,28350,"active","Ultra Wideband, dense urban only"],
+    ["NR","n260",39000,39500,"active"]
+  ]},
+  {n:"AT&T", mnc:"310-410", note:"2G off in 2017, 3G off in February 2022. Also operates FirstNet on Band 14.", al:[
+    ["GSM","B2",1930,1940,"retired","Shut down January 2017"],
+    ["UMTS","B5",869,879,"retired","Shut down February 2022"],
+    ["UMTS","B2",1930,1945,"retired"],
+    ["LTE","B12",729,746,"active"],
+    ["LTE","B14",758,768,"active","FirstNet public-safety layer"],
+    ["LTE","B2",1945,1965,"active"],
+    ["LTE","B4",2130,2155,"active"],
+    ["LTE","B5",869,879,"active"],
+    ["LTE","B29",717,728,"active","Supplementary downlink"],
+    ["LTE","B30",2350,2360,"active","WCS"],
+    ["LTE","B66",2110,2130,"active"],
+    ["NR","n5",869,879,"active","DSS"],
+    ["NR","n77",3450,3550,"active","3.45 GHz band"],
+    ["NR","n77",3700,3800,"active","C-band"],
+    ["NR","n260",38600,39000,"licensed","Very limited deployment"]
+  ]},
+  {n:"T-Mobile", mnc:"310-260", note:"Absorbed Sprint's 2.5 GHz holdings, which give it the deepest mid-band position in the US.", al:[
+    ["GSM","B2",1930,1935,"retired","Final GSM sites off in 2024"],
+    ["UMTS","B4",2130,2145,"retired","3G off July 2022"],
+    ["LTE","B71",617,632,"active"],
+    ["LTE","B12",729,746,"active"],
+    ["LTE","B2",1935,1950,"active"],
+    ["LTE","B4",2110,2130,"active"],
+    ["LTE","B66",2130,2150,"active"],
+    ["LTE","B41",2496,2570,"refarm","Ex-Sprint TDD, moving to n41"],
+    ["NR","n71",617,647,"active","Nationwide low-band layer"],
+    ["NR","n25",1935,1965,"active"],
+    ["NR","n41",2496,2690,"active","Up to 194 MHz — the Ultra Capacity layer"],
+    ["NR","n77",3700,3800,"licensed","Small C-band position"],
+    ["NR","n258",24250,25000,"licensed"],
+    ["NR","n260",37000,37600,"licensed"]
+  ]},
+  {n:"UScellular", mnc:"311-580", note:"Regional operator; spectrum is being sold to the national carriers.", al:[
+    ["LTE","B12",729,740,"active"],
+    ["LTE","B2",1950,1965,"active"],
+    ["LTE","B4",2145,2155,"active"],
+    ["LTE","B5",879,889,"active"],
+    ["LTE","B71",632,642,"active"],
+    ["NR","n71",632,642,"active"],
+    ["NR","n258",24250,24750,"licensed","Never deployed"]
+  ]},
+  {n:"Boost Mobile (EchoStar)", mnc:"313-340", note:"Cloud-native, 5G-only network. No 2G/3G/4G legacy of its own; roams on AT&T and T-Mobile.", al:[
+    ["NR","n71",647,652,"active"],
+    ["NR","n70",1995,2020,"active","AWS-4"],
+    ["NR","n66",2150,2180,"active","AWS-3"],
+    ["NR","n29",717,722,"licensed","700 MHz E block, downlink only"],
+    ["NR","n48",3550,3700,"licensed","CBRS priority access"]
+  ]}
+]},
+
+{id:"GB", name:"United Kingdom", flag:"🇬🇧", iso3:"GBR", mcc:"234",
+ note:"Ofcom has set a 2033 deadline for switching off 2G and 3G; most 3G networks are already off.",
+ operators:[
+  {n:"EE", mnc:"234-30", note:"BT group. Holds the largest 1800 MHz block in Europe, which is why UK LTE started on Band 3.", al:[
+    ["GSM","B3",1805,1810,"sunset"],
+    ["UMTS","B1",2110,2125,"retired","3G switched off during 2024"],
+    ["LTE","B20",801,811,"active"],
+    ["LTE","B3",1832,1877,"active","2×45 MHz"],
+    ["LTE","B1",2110,2130,"active"],
+    ["LTE","B7",2620,2655,"active"],
+    ["LTE","B32",1452,1477,"active","Supplementary downlink"],
+    ["LTE","B38",2570,2595,"licensed"],
+    ["NR","n78",3540,3620,"active","80 MHz"],
+    ["NR","n28",758,768,"active"],
+    ["NR","n1",2130,2145,"active","DSS"]
+  ]},
+  {n:"Vodafone UK", mnc:"234-15", note:"Merging with Three UK; the combined 3.4–3.8 GHz position will be the largest in the country.", al:[
+    ["GSM","B8",925,935,"active"],
+    ["GSM","B3",1815,1825,"sunset"],
+    ["UMTS","B1",2125,2140,"retired"],
+    ["UMTS","B8",935,945,"retired"],
+    ["LTE","B20",791,801,"active"],
+    ["LTE","B8",925,935,"active"],
+    ["LTE","B3",1815,1832,"active"],
+    ["LTE","B1",2130,2150,"active"],
+    ["LTE","B7",2655,2675,"active"],
+    ["LTE","B38",2595,2620,"licensed"],
+    ["NR","n78",3410,3500,"active","90 MHz"],
+    ["NR","n28",768,778,"active"],
+    ["NR","n8",935,945,"licensed","Held for a future low-band 5G layer"]
+  ]},
+  {n:"Three UK", mnc:"234-20", note:"No 900 MHz holding at all, which historically hurt indoor coverage; compensated by a very large 3.6–3.8 GHz block.", al:[
+    ["UMTS","B1",2150,2165,"retired","3G off end of 2024"],
+    ["LTE","B20",811,816,"active"],
+    ["LTE","B3",1805,1815,"active"],
+    ["LTE","B1",2150,2165,"active"],
+    ["NR","n78",3620,3800,"active","~140 MHz, mostly contiguous"],
+    ["NR","n28",778,788,"licensed"]
+  ]},
+  {n:"O2 UK", mnc:"234-10", note:"Virgin Media O2. Holds the 2.3 GHz band, unusual in western Europe.", al:[
+    ["GSM","B8",935,952,"active"],
+    ["UMTS","B1",2165,2170,"retired"],
+    ["UMTS","B8",945,955,"retired"],
+    ["LTE","B20",816,821,"active"],
+    ["LTE","B8",945,960,"active"],
+    ["LTE","B1",2165,2170,"active"],
+    ["LTE","B40",2350,2390,"active"],
+    ["LTE","B32",1477,1492,"licensed"],
+    ["NR","n78",3500,3540,"active","40 MHz"],
+    ["NR","n28",788,798,"active"],
+    ["NR","n40",2350,2390,"licensed","Band held on LTE, not yet on NR"]
+  ]}
+]},
+
+{id:"DE", name:"Germany", flag:"🇩🇪", iso3:"DEU", mcc:"262",
+ note:"All three incumbents shut 3G down in 2021, unusually early, and reused the 2100 MHz spectrum for LTE and NR.",
+ operators:[
+  {n:"Telekom", mnc:"262-01", note:"", al:[
+    ["GSM","B8",935,945,"active","2G kept alive for machine-to-machine traffic"],
+    ["GSM","B3",1805,1815,"sunset"],
+    ["UMTS","B1",2110,2125,"retired","Switched off June 2021"],
+    ["LTE","B20",791,801,"active"],
+    ["LTE","B8",935,945,"active"],
+    ["LTE","B3",1815,1835,"active"],
+    ["LTE","B1",2110,2130,"active"],
+    ["LTE","B7",2620,2640,"active"],
+    ["LTE","B32",1452,1467,"active"],
+    ["NR","n78",3600,3690,"active","90 MHz"],
+    ["NR","n28",758,768,"active"],
+    ["NR","n1",2130,2140,"active","DSS"],
+    ["NR","n258",26000,26500,"licensed","Local/industrial use only"]
+  ]},
+  {n:"Vodafone", mnc:"262-02", note:"", al:[
+    ["GSM","B8",925,935,"active"],
+    ["UMTS","B1",2125,2140,"retired","Switched off June 2021"],
+    ["LTE","B20",801,811,"active"],
+    ["LTE","B8",925,935,"active"],
+    ["LTE","B3",1835,1855,"active"],
+    ["LTE","B1",2140,2155,"active"],
+    ["LTE","B7",2640,2660,"active"],
+    ["LTE","B32",1467,1482,"active"],
+    ["NR","n78",3500,3590,"active","90 MHz"],
+    ["NR","n28",768,778,"active"],
+    ["NR","n1",2155,2165,"active","DSS"],
+    ["NR","n258",26500,27000,"licensed"]
+  ]},
+  {n:"O2 Telefónica", mnc:"262-03", note:"", al:[
+    ["GSM","B8",945,960,"active"],
+    ["GSM","B3",1855,1865,"sunset"],
+    ["UMTS","B1",2155,2170,"retired","Switched off December 2021"],
+    ["LTE","B20",811,821,"active"],
+    ["LTE","B8",945,960,"active"],
+    ["LTE","B3",1855,1875,"active"],
+    ["LTE","B1",2155,2170,"active"],
+    ["LTE","B7",2660,2680,"active"],
+    ["NR","n78",3700,3790,"active","90 MHz"],
+    ["NR","n28",778,788,"active"],
+    ["NR","n1",2160,2170,"active","DSS"]
+  ]},
+  {n:"1&1", mnc:"262-23", note:"Fourth network, built from scratch as an open-RAN 5G network with national roaming on Vodafone.", al:[
+    ["NR","n78",3640,3690,"active","50 MHz won in the 2019 auction"],
+    ["NR","B34",2010,2020,"licensed","2 GHz unpaired holding, not yet in service"]
+  ]}
+]},
+
+{id:"FR", name:"France", flag:"🇫🇷", iso3:"FRA", mcc:"208",
+ note:"Arcep has scheduled 2G switch-off for the end of 2026 and 3G for the end of 2028 across all four networks.",
+ operators:[
+  {n:"Orange", mnc:"208-01", note:"", al:[
+    ["GSM","B8",935,945,"sunset","Off by end of 2026"],
+    ["UMTS","B1",2110,2125,"sunset","Off by end of 2028"],
+    ["UMTS","B8",935,945,"sunset"],
+    ["LTE","B20",791,801,"active"],
+    ["LTE","B8",935,945,"active"],
+    ["LTE","B3",1830,1850,"active"],
+    ["LTE","B1",2110,2130,"active"],
+    ["LTE","B7",2620,2640,"active"],
+    ["LTE","B28",758,768,"active"],
+    ["NR","n78",3660,3750,"active","90 MHz"],
+    ["NR","n28",758,768,"active"],
+    ["NR","n1",2125,2130,"active","DSS"],
+    ["NR","n257",26500,27000,"planned","Trial licences only"]
+  ]},
+  {n:"SFR", mnc:"208-10", note:"", al:[
+    ["GSM","B8",925,935,"sunset"],
+    ["UMTS","B1",2130,2145,"sunset"],
+    ["LTE","B20",801,811,"active"],
+    ["LTE","B8",925,935,"active"],
+    ["LTE","B3",1850,1865,"active"],
+    ["LTE","B1",2130,2145,"active"],
+    ["LTE","B7",2640,2655,"active"],
+    ["LTE","B28",768,778,"active"],
+    ["NR","n78",3600,3680,"active","80 MHz"],
+    ["NR","n28",768,778,"active"]
+  ]},
+  {n:"Bouygues Telecom", mnc:"208-20", note:"", al:[
+    ["GSM","B8",945,960,"sunset"],
+    ["UMTS","B1",2145,2160,"sunset"],
+    ["LTE","B20",811,816,"active"],
+    ["LTE","B8",945,960,"active"],
+    ["LTE","B3",1865,1880,"active"],
+    ["LTE","B1",2145,2160,"active"],
+    ["LTE","B7",2655,2670,"active"],
+    ["LTE","B28",778,788,"active"],
+    ["NR","n78",3490,3560,"active","70 MHz"],
+    ["NR","n28",778,788,"active"]
+  ]},
+  {n:"Free Mobile", mnc:"208-15", note:"Fourth entrant since 2012; leans heavily on 700 MHz for national coverage.", al:[
+    ["UMTS","B1",2160,2170,"sunset","Roaming on Orange for legacy 3G"],
+    ["LTE","B20",816,821,"active"],
+    ["LTE","B3",1805,1820,"active"],
+    ["LTE","B1",2160,2170,"active"],
+    ["LTE","B7",2670,2690,"active"],
+    ["LTE","B28",788,798,"active","2×10 MHz"],
+    ["NR","n78",3560,3630,"active","70 MHz"],
+    ["NR","n28",788,798,"active","Nationwide 5G coverage layer"]
+  ]}
+]},
+
+{id:"IT", name:"Italy", flag:"🇮🇹", iso3:"ITA", mcc:"222",
+ note:"The 2018 auction split 3.6–3.8 GHz 80/80/20/20 MHz and gave each of the four networks 2×10 MHz at 700 MHz.",
+ operators:[
+  {n:"TIM", mnc:"222-01", note:"", al:[
+    ["GSM","B8",935,945,"sunset"],
+    ["UMTS","B1",2110,2125,"retired"],
+    ["LTE","B20",791,801,"active"],
+    ["LTE","B8",935,945,"active"],
+    ["LTE","B3",1805,1825,"active"],
+    ["LTE","B1",2110,2130,"active"],
+    ["LTE","B7",2620,2640,"active"],
+    ["LTE","B32",1452,1467,"active"],
+    ["NR","n78",3600,3680,"active","80 MHz"],
+    ["NR","n28",758,768,"active"],
+    ["NR","n258",26500,27000,"licensed"]
+  ]},
+  {n:"Vodafone Italia", mnc:"222-10", note:"Being acquired by Swisscom / Fastweb.", al:[
+    ["GSM","B8",925,935,"sunset"],
+    ["UMTS","B1",2125,2140,"retired"],
+    ["LTE","B20",801,811,"active"],
+    ["LTE","B8",925,935,"active"],
+    ["LTE","B3",1825,1845,"active"],
+    ["LTE","B1",2130,2150,"active"],
+    ["LTE","B7",2640,2660,"active"],
+    ["NR","n78",3680,3760,"active","80 MHz"],
+    ["NR","n28",768,778,"active"],
+    ["NR","n258",27000,27300,"licensed"]
+  ]},
+  {n:"WindTre", mnc:"222-88", note:"Merger of Wind and 3 Italia; the densest 1800 MHz holding in the country.", al:[
+    ["GSM","B8",945,960,"sunset"],
+    ["UMTS","B1",2150,2170,"retired"],
+    ["LTE","B20",811,821,"active"],
+    ["LTE","B8",945,960,"active"],
+    ["LTE","B3",1845,1880,"active"],
+    ["LTE","B1",2150,2170,"active"],
+    ["LTE","B7",2660,2690,"active"],
+    ["NR","n78",3780,3800,"active","20 MHz only"],
+    ["NR","n28",778,788,"active"]
+  ]},
+  {n:"Iliad", mnc:"222-50", note:"", al:[
+    ["LTE","B3",1805,1810,"active"],
+    ["LTE","B1",2140,2150,"active"],
+    ["LTE","B7",2670,2680,"active"],
+    ["NR","n78",3760,3780,"active","20 MHz"],
+    ["NR","n28",788,798,"active"],
+    ["NR","n258",27300,27500,"licensed","Not deployed"]
+  ]}
+]},
+
+{id:"ES", name:"Spain", flag:"🇪🇸", iso3:"ESP", mcc:"214",
+ note:"Orange and MásMóvil merged into MasOrange in 2024; Digi acquired divested spectrum as the fourth network.",
+ operators:[
+  {n:"Movistar", mnc:"214-07", note:"Telefónica.", al:[
+    ["GSM","B8",935,945,"sunset"],
+    ["UMTS","B1",2110,2125,"sunset"],
+    ["LTE","B20",791,801,"active"],
+    ["LTE","B8",935,945,"active"],
+    ["LTE","B3",1805,1825,"active"],
+    ["LTE","B1",2110,2130,"active"],
+    ["LTE","B7",2620,2640,"active"],
+    ["NR","n78",3600,3700,"active","100 MHz"],
+    ["NR","n28",758,768,"active"],
+    ["NR","n1",2125,2130,"active","DSS"]
+  ]},
+  {n:"MasOrange", mnc:"214-03", note:"Orange España and MásMóvil combined; the largest spectrum holder in Spain.", al:[
+    ["GSM","B8",925,935,"sunset"],
+    ["UMTS","B1",2130,2145,"sunset"],
+    ["LTE","B20",801,811,"active"],
+    ["LTE","B8",925,935,"active"],
+    ["LTE","B3",1825,1850,"active"],
+    ["LTE","B1",2130,2155,"active"],
+    ["LTE","B7",2640,2665,"active"],
+    ["NR","n78",3400,3500,"active","100 MHz"],
+    ["NR","n78",3500,3600,"licensed","Ex-MásMóvil block, partly divested"],
+    ["NR","n28",768,778,"active"]
+  ]},
+  {n:"Vodafone España", mnc:"214-01", note:"Owned by Zegona since 2024.", al:[
+    ["GSM","B8",945,960,"sunset"],
+    ["UMTS","B1",2145,2160,"retired","3G off in 2025"],
+    ["LTE","B20",811,821,"active"],
+    ["LTE","B8",945,960,"active"],
+    ["LTE","B3",1855,1880,"active"],
+    ["LTE","B1",2155,2170,"active"],
+    ["LTE","B7",2665,2690,"active"],
+    ["NR","n78",3700,3790,"active","90 MHz"],
+    ["NR","n28",778,788,"active"]
+  ]},
+  {n:"Digi", mnc:"214-22", note:"Fourth network being built out from 2025 with spectrum divested by the MasOrange merger.", al:[
+    ["NR","n78",3590,3610,"active","20 MHz"],
+    ["LTE","B3",1850,1855,"licensed","Not yet lit"],
+    ["NR","n28",788,798,"planned"]
+  ]}
+]},
+
+{id:"NL", name:"Netherlands", flag:"🇳🇱", iso3:"NLD", mcc:"204",
+ note:"Three networks since T-Mobile and Tele2 merged into Odido. The 3.5 GHz band was only cleared and auctioned in 2024.",
+ operators:[
+  {n:"KPN", mnc:"204-08", note:"", al:[
+    ["GSM","B8",935,945,"retired","2G off in 2025"],
+    ["UMTS","B1",2110,2125,"retired","3G off in 2022"],
+    ["LTE","B20",791,801,"active"],
+    ["LTE","B8",935,945,"active"],
+    ["LTE","B3",1805,1825,"active"],
+    ["LTE","B1",2110,2130,"active"],
+    ["LTE","B7",2620,2640,"active"],
+    ["LTE","B32",1452,1467,"active"],
+    ["NR","n78",3450,3550,"active","100 MHz"],
+    ["NR","n28",758,768,"active"],
+    ["NR","n1",2125,2130,"active","DSS"]
+  ]},
+  {n:"VodafoneZiggo", mnc:"204-04", note:"", al:[
+    ["GSM","B8",925,935,"sunset"],
+    ["UMTS","B1",2130,2145,"retired"],
+    ["LTE","B20",801,811,"active"],
+    ["LTE","B8",925,935,"active"],
+    ["LTE","B3",1825,1845,"active"],
+    ["LTE","B1",2130,2150,"active"],
+    ["LTE","B7",2640,2660,"active"],
+    ["NR","n78",3550,3650,"active","100 MHz"],
+    ["NR","n28",768,778,"active"]
+  ]},
+  {n:"Odido", mnc:"204-16", note:"Formerly T-Mobile Netherlands.", al:[
+    ["GSM","B8",945,960,"retired"],
+    ["UMTS","B1",2145,2160,"retired"],
+    ["LTE","B20",811,821,"active"],
+    ["LTE","B8",945,960,"active"],
+    ["LTE","B3",1845,1880,"active"],
+    ["LTE","B1",2150,2170,"active"],
+    ["LTE","B7",2660,2690,"active"],
+    ["NR","n78",3650,3750,"active","100 MHz"],
+    ["NR","n28",778,788,"active"],
+    ["NR","n258",26500,27000,"licensed"]
+  ]}
+]},
+
+{id:"CH", name:"Switzerland", flag:"🇨🇭", iso3:"CHE", mcc:"228",
+ note:"Very early 5G market — commercial launch in April 2019, before most of Europe.",
+ operators:[
+  {n:"Swisscom", mnc:"228-01", note:"", al:[
+    ["GSM","B8",935,945,"retired","2G off December 2020"],
+    ["UMTS","B1",2110,2130,"retired","3G off in 2025"],
+    ["LTE","B20",791,801,"active"],
+    ["LTE","B8",935,945,"active"],
+    ["LTE","B3",1805,1830,"active"],
+    ["LTE","B1",2110,2135,"active"],
+    ["LTE","B7",2620,2650,"active"],
+    ["LTE","B32",1452,1472,"active"],
+    ["NR","n78",3500,3600,"active","100 MHz"],
+    ["NR","n28",758,768,"active"],
+    ["NR","n1",2130,2140,"active","DSS"]
+  ]},
+  {n:"Sunrise", mnc:"228-02", note:"", al:[
+    ["GSM","B8",925,935,"retired"],
+    ["UMTS","B1",2135,2155,"retired"],
+    ["LTE","B20",801,811,"active"],
+    ["LTE","B8",925,935,"active"],
+    ["LTE","B3",1830,1855,"active"],
+    ["LTE","B1",2135,2155,"active"],
+    ["LTE","B7",2650,2670,"active"],
+    ["NR","n78",3600,3700,"active","100 MHz"],
+    ["NR","n28",768,778,"active"]
+  ]},
+  {n:"Salt", mnc:"228-03", note:"", al:[
+    ["GSM","B8",945,960,"retired"],
+    ["UMTS","B1",2155,2170,"retired"],
+    ["LTE","B20",811,821,"active"],
+    ["LTE","B8",945,960,"active"],
+    ["LTE","B3",1855,1880,"active"],
+    ["LTE","B1",2155,2170,"active"],
+    ["LTE","B7",2670,2690,"active"],
+    ["NR","n78",3700,3800,"active","100 MHz"],
+    ["NR","n28",778,788,"active"]
+  ]}
+]},
+
+{id:"TR", name:"Türkiye", flag:"🇹🇷", iso3:"TUR", mcc:"286",
+ note:"5G licences in the 700 MHz and 3.5 GHz bands were auctioned in late 2025 with service starting in 2026.",
+ operators:[
+  {n:"Turkcell", mnc:"286-01", note:"", al:[
+    ["GSM","B8",935,947,"active"],
+    ["GSM","B3",1805,1815,"sunset"],
+    ["UMTS","B1",2110,2125,"sunset"],
+    ["LTE","B20",791,801,"active"],
+    ["LTE","B8",935,947,"active"],
+    ["LTE","B3",1815,1840,"active"],
+    ["LTE","B1",2110,2130,"active"],
+    ["LTE","B7",2620,2645,"active"],
+    ["NR","n78",3500,3600,"planned","Awarded in the 2025 auction"],
+    ["NR","n28",758,768,"planned"]
+  ]},
+  {n:"Vodafone Türkiye", mnc:"286-02", note:"", al:[
+    ["GSM","B8",925,935,"active"],
+    ["UMTS","B1",2130,2145,"sunset"],
+    ["LTE","B20",801,811,"active"],
+    ["LTE","B8",925,935,"active"],
+    ["LTE","B3",1840,1860,"active"],
+    ["LTE","B1",2130,2150,"active"],
+    ["LTE","B7",2645,2670,"active"],
+    ["NR","n78",3600,3680,"planned"],
+    ["NR","n28",768,778,"planned"]
+  ]},
+  {n:"Türk Telekom", mnc:"286-03", note:"", al:[
+    ["GSM","B8",947,960,"active"],
+    ["UMTS","B1",2150,2170,"sunset"],
+    ["LTE","B20",811,821,"active"],
+    ["LTE","B8",947,960,"active"],
+    ["LTE","B3",1860,1880,"active"],
+    ["LTE","B1",2150,2170,"active"],
+    ["LTE","B7",2670,2690,"active"],
+    ["NR","n78",3680,3760,"planned"],
+    ["NR","n28",778,788,"planned"]
+  ]}
+]},
+
+{id:"AE", name:"United Arab Emirates", flag:"🇦🇪", iso3:"ARE", mcc:"424",
+ note:"Two operators, both with very large 3.5 GHz blocks and early mmWave deployments.",
+ operators:[
+  {n:"e& (Etisalat)", mnc:"424-02", note:"", al:[
+    ["GSM","B8",935,947,"sunset"],
+    ["GSM","B3",1805,1815,"sunset"],
+    ["UMTS","B1",2110,2130,"sunset"],
+    ["LTE","B8",935,947,"active"],
+    ["LTE","B3",1815,1845,"active"],
+    ["LTE","B1",2110,2135,"active"],
+    ["LTE","B7",2620,2650,"active"],
+    ["LTE","B38",2570,2595,"active"],
+    ["LTE","B40",2300,2350,"active"],
+    ["NR","n78",3400,3500,"active","100 MHz"],
+    ["NR","n28",758,768,"licensed"],
+    ["NR","n257",26500,27300,"active","Stadiums and dense urban"]
+  ]},
+  {n:"du", mnc:"424-03", note:"Emirates Integrated Telecommunications.", al:[
+    ["GSM","B8",947,960,"sunset"],
+    ["UMTS","B1",2130,2150,"sunset"],
+    ["LTE","B8",947,960,"active"],
+    ["LTE","B3",1845,1880,"active"],
+    ["LTE","B1",2135,2160,"active"],
+    ["LTE","B7",2650,2680,"active"],
+    ["LTE","B40",2350,2400,"active"],
+    ["NR","n78",3500,3600,"active","100 MHz"],
+    ["NR","n257",27300,28100,"active"],
+    ["NR","n28",768,778,"licensed"]
+  ]}
+]},
+
+{id:"SA", name:"Saudi Arabia", flag:"🇸🇦", iso3:"SAU", mcc:"420",
+ note:"One of the most spectrum-rich markets: each operator holds several hundred MHz across low, mid and 2.6 GHz bands.",
+ operators:[
+  {n:"stc", mnc:"420-01", note:"", al:[
+    ["GSM","B8",935,945,"sunset"],
+    ["UMTS","B1",2110,2130,"sunset"],
+    ["LTE","B3",1805,1830,"active"],
+    ["LTE","B8",935,945,"active"],
+    ["LTE","B1",2110,2130,"active"],
+    ["LTE","B7",2620,2645,"active"],
+    ["LTE","B40",2300,2340,"active"],
+    ["NR","n78",3400,3500,"active","100 MHz"],
+    ["NR","n41",2500,2570,"active"],
+    ["NR","n28",758,768,"active"],
+    ["NR","n257",27500,28300,"licensed"]
+  ]},
+  {n:"Mobily", mnc:"420-03", note:"", al:[
+    ["GSM","B8",945,955,"sunset"],
+    ["UMTS","B1",2130,2150,"sunset"],
+    ["LTE","B3",1830,1855,"active"],
+    ["LTE","B8",945,955,"active"],
+    ["LTE","B1",2130,2150,"active"],
+    ["LTE","B7",2645,2670,"active"],
+    ["LTE","B40",2340,2370,"active"],
+    ["NR","n78",3500,3600,"active","100 MHz"],
+    ["NR","n28",768,778,"active"]
+  ]},
+  {n:"Zain KSA", mnc:"420-04", note:"", al:[
+    ["GSM","B8",955,960,"sunset"],
+    ["UMTS","B1",2150,2170,"sunset"],
+    ["LTE","B3",1855,1880,"active"],
+    ["LTE","B1",2150,2170,"active"],
+    ["LTE","B7",2670,2690,"active"],
+    ["LTE","B40",2370,2400,"active"],
+    ["NR","n78",3600,3700,"active","100 MHz"],
+    ["NR","n28",778,788,"active"]
+  ]}
+]},
+
+{id:"IN", name:"India", flag:"🇮🇳", iso3:"IND", mcc:"404-405",
+ note:"Spectrum is licensed per telecom circle, so holdings differ substantially between states. Figures below are indicative.",
+ operators:[
+  {n:"Reliance Jio", mnc:"405-840", note:"Launched as an LTE-only network in 2016; no 2G or 3G layer at all.", al:[
+    ["LTE","B3",1805,1825,"active"],
+    ["LTE","B5",869,879,"active"],
+    ["LTE","B40",2300,2340,"active"],
+    ["NR","n28",758,768,"active","Nationwide 5G coverage layer"],
+    ["NR","n78",3300,3400,"active","~100 MHz per circle"],
+    ["NR","n258",26500,27500,"licensed","1 GHz held, deployed in a few cities"]
+  ]},
+  {n:"Bharti Airtel", mnc:"404-10", note:"", al:[
+    ["GSM","B8",935,945,"active"],
+    ["GSM","B3",1825,1835,"sunset"],
+    ["UMTS","B1",2110,2125,"retired","3G shut down 2020"],
+    ["LTE","B3",1835,1860,"active"],
+    ["LTE","B8",935,945,"active"],
+    ["LTE","B1",2110,2130,"active"],
+    ["LTE","B40",2340,2370,"active"],
+    ["LTE","B41",2500,2570,"active"],
+    ["NR","n78",3400,3500,"active","~100 MHz per circle"],
+    ["NR","n257",27500,28500,"licensed"],
+    ["NR","n8",935,945,"licensed","For a future low-band layer"]
+  ]},
+  {n:"Vodafone Idea (Vi)", mnc:"404-11", note:"", al:[
+    ["GSM","B8",945,960,"active"],
+    ["UMTS","B1",2130,2150,"sunset"],
+    ["LTE","B3",1860,1880,"active"],
+    ["LTE","B8",945,960,"active"],
+    ["LTE","B1",2130,2150,"active"],
+    ["LTE","B41",2570,2620,"active"],
+    ["NR","n78",3500,3550,"active","Deployment limited to selected circles"],
+    ["NR","n257",28500,29500,"licensed"]
+  ]},
+  {n:"BSNL", mnc:"404-38", note:"State-owned; deploying an indigenous 4G/5G stack.", al:[
+    ["GSM","B8",925,935,"active"],
+    ["UMTS","B1",2150,2170,"sunset"],
+    ["LTE","B41",2620,2690,"active"],
+    ["LTE","B8",925,935,"active"],
+    ["NR","n78",3550,3600,"planned"],
+    ["NR","n28",788,798,"licensed"]
+  ]}
+]},
+
+{id:"JP", name:"Japan", flag:"🇯🇵", iso3:"JPN", mcc:"440-441",
+ note:"No GSM was ever deployed in Japan — networks went from PDC straight to W-CDMA and CDMA2000. 4.7 GHz (n79) is a Japanese speciality.",
+ operators:[
+  {n:"NTT Docomo", mnc:"440-10", note:"", al:[
+    ["UMTS","B1",2110,2130,"sunset","FOMA closing in 2026"],
+    ["UMTS","B19",875,885,"sunset"],
+    ["LTE","B1",2110,2130,"active"],
+    ["LTE","B3",1805,1825,"active"],
+    ["LTE","B19",875,885,"active"],
+    ["LTE","B21",1495.9,1505.9,"active"],
+    ["LTE","B28",758,773,"active"],
+    ["LTE","B42",3480,3520,"active"],
+    ["NR","n78",3600,3700,"active","100 MHz"],
+    ["NR","n79",4500,4600,"active","100 MHz"],
+    ["NR","n257",27400,27800,"active"],
+    ["NR","n28",758,768,"active","DSS"]
+  ]},
+  {n:"KDDI au", mnc:"440-51", note:"", al:[
+    ["LTE","B1",2130,2150,"active"],
+    ["LTE","B11",1475.9,1485.9,"active"],
+    ["LTE","B18",860,875,"active"],
+    ["LTE","B26",860,875,"active","Superset of B18"],
+    ["LTE","B28",773,783,"active"],
+    ["LTE","B41",2545,2595,"active"],
+    ["LTE","B42",3520,3560,"active"],
+    ["NR","n77",3700,3800,"active","100 MHz"],
+    ["NR","n78",3400,3440,"licensed"],
+    ["NR","n257",27800,28200,"active"],
+    ["NR","n28",773,783,"active"]
+  ]},
+  {n:"SoftBank", mnc:"440-20", note:"", al:[
+    ["UMTS","B1",2150,2170,"retired","3G off in 2024"],
+    ["LTE","B1",2150,2170,"active"],
+    ["LTE","B3",1845,1865,"active"],
+    ["LTE","B8",925,945,"active"],
+    ["LTE","B11",1485.9,1495.9,"active"],
+    ["LTE","B28",783,798,"active"],
+    ["LTE","B41",2595,2645,"active"],
+    ["LTE","B42",3560,3600,"active"],
+    ["NR","n77",3900,4000,"active","100 MHz"],
+    ["NR","n257",29100,29500,"active"],
+    ["NR","n3",1845,1865,"active","DSS"]
+  ]},
+  {n:"Rakuten Mobile", mnc:"440-11", note:"Fully virtualised open-RAN network launched in 2020; roams on KDDI where coverage is thin.", al:[
+    ["LTE","B3",1845,1860,"active","Own 1800 MHz block"],
+    ["LTE","B18",860,875,"licensed","Roaming on KDDI, not owned"],
+    ["NR","n77",3800,3900,"active","100 MHz"],
+    ["NR","n257",27000,27400,"active"],
+    ["NR","n28",773,783,"planned","Platinum-band allocation awarded 2024"]
+  ]}
+]},
+
+{id:"KR", name:"South Korea", flag:"🇰🇷", iso3:"KOR", mcc:"450",
+ note:"The 28 GHz licences held by all three operators were revoked in 2023 after deployment obligations were missed.",
+ operators:[
+  {n:"SK Telecom", mnc:"450-05", note:"", al:[
+    ["LTE","B1",2110,2130,"active"],
+    ["LTE","B3",1840,1860,"active"],
+    ["LTE","B5",869,879,"active"],
+    ["LTE","B7",2620,2640,"active"],
+    ["NR","n78",3600,3700,"active","100 MHz"],
+    ["NR","n257",28100,28900,"retired","Licence revoked in 2023"]
+  ]},
+  {n:"KT", mnc:"450-08", note:"", al:[
+    ["LTE","B1",2130,2150,"active"],
+    ["LTE","B3",1805,1825,"active"],
+    ["LTE","B8",935,945,"active"],
+    ["NR","n78",3500,3600,"active","100 MHz"],
+    ["NR","n257",26500,27300,"retired","Licence revoked in 2023"]
+  ]},
+  {n:"LG U+", mnc:"450-06", note:"", al:[
+    ["LTE","B1",2150,2170,"active"],
+    ["LTE","B5",879,894,"active"],
+    ["LTE","B7",2640,2660,"active"],
+    ["NR","n78",3400,3500,"active","100 MHz including the 2023 top-up block"],
+    ["NR","n257",27300,28100,"retired","Licence revoked in 2023"]
+  ]}
+]},
+
+{id:"CN", name:"China", flag:"🇨🇳", iso3:"CHN", mcc:"460",
+ note:"China Telecom and China Unicom share one 5G radio network; China Mobile shares a 700 MHz network with China Broadnet.",
+ operators:[
+  {n:"China Mobile", mnc:"460-00", note:"", al:[
+    ["GSM","B8",935,954,"sunset"],
+    ["GSM","B3",1805,1820,"sunset"],
+    ["LTE","B3",1805,1830,"active"],
+    ["LTE","B8",935,954,"active"],
+    ["LTE","B34",2010,2025,"active","TD-LTE"],
+    ["LTE","B39",1880,1900,"active","TD-LTE"],
+    ["LTE","B40",2320,2370,"active"],
+    ["LTE","B41",2575,2635,"active"],
+    ["NR","n41",2515,2675,"active","160 MHz"],
+    ["NR","n79",4800,4900,"active","100 MHz"],
+    ["NR","n28",758,788,"active","Shared 700 MHz network with China Broadnet"]
+  ]},
+  {n:"China Telecom", mnc:"460-11", note:"", al:[
+    ["GSM","B5",870,880,"retired","Former CDMA carrier"],
+    ["LTE","B1",2110,2130,"active"],
+    ["LTE","B3",1860,1875,"active"],
+    ["LTE","B5",870,880,"active"],
+    ["NR","n78",3400,3500,"active","100 MHz, shared RAN with Unicom"],
+    ["NR","n1",2110,2130,"active"],
+    ["NR","n28",758,768,"licensed"]
+  ]},
+  {n:"China Unicom", mnc:"460-01", note:"", al:[
+    ["GSM","B8",954,960,"sunset"],
+    ["UMTS","B1",2130,2145,"retired"],
+    ["LTE","B1",2130,2145,"active"],
+    ["LTE","B3",1840,1860,"active"],
+    ["LTE","B8",954,960,"active"],
+    ["LTE","B40",2300,2320,"active"],
+    ["NR","n78",3500,3600,"active","100 MHz, shared RAN with China Telecom"],
+    ["NR","n1",2130,2145,"active"]
+  ]}
+]},
+
+{id:"AU", name:"Australia", flag:"🇦🇺", iso3:"AUS", mcc:"505",
+ note:"3G was switched off across all three networks during 2024, freeing 850 and 2100 MHz for LTE and NR.",
+ operators:[
+  {n:"Telstra", mnc:"505-01", note:"", al:[
+    ["GSM","B8",935,945,"retired","2G off December 2016"],
+    ["UMTS","B5",875,885,"retired","3G off October 2024"],
+    ["LTE","B1",2110,2130,"active"],
+    ["LTE","B3",1805,1825,"active"],
+    ["LTE","B5",875,885,"active"],
+    ["LTE","B7",2620,2660,"active"],
+    ["LTE","B8",935,945,"active"],
+    ["LTE","B28",758,778,"active"],
+    ["LTE","B42",3400,3450,"active"],
+    ["NR","n78",3600,3700,"active","100 MHz"],
+    ["NR","n5",875,885,"active","DSS"],
+    ["NR","n28",758,768,"active"],
+    ["NR","n257",26500,27500,"active","Fixed wireless and dense urban"]
+  ]},
+  {n:"Optus", mnc:"505-02", note:"", al:[
+    ["GSM","B8",945,955,"retired"],
+    ["UMTS","B5",885,894,"retired","3G off September 2024"],
+    ["LTE","B1",2130,2150,"active"],
+    ["LTE","B3",1825,1845,"active"],
+    ["LTE","B5",885,894,"active"],
+    ["LTE","B7",2660,2690,"active"],
+    ["LTE","B8",945,955,"active"],
+    ["LTE","B28",778,788,"active"],
+    ["LTE","B40",2300,2340,"active"],
+    ["NR","n78",3500,3600,"active","100 MHz"],
+    ["NR","n28",778,788,"active"],
+    ["NR","n257",27500,28100,"active"]
+  ]},
+  {n:"TPG Telecom (Vodafone)", mnc:"505-03", note:"", al:[
+    ["UMTS","B1",2150,2165,"retired","3G off January 2024"],
+    ["LTE","B1",2150,2170,"active"],
+    ["LTE","B3",1845,1880,"active"],
+    ["LTE","B5",869,875,"active"],
+    ["LTE","B8",955,960,"active"],
+    ["LTE","B28",788,798,"active"],
+    ["LTE","B40",2340,2400,"active"],
+    ["NR","n78",3560,3620,"active","60 MHz"],
+    ["NR","n28",788,798,"active"],
+    ["NR","n40",2340,2400,"licensed","Held on LTE only"]
+  ]}
+]},
+
+{id:"CA", name:"Canada", flag:"🇨🇦", iso3:"CAN", mcc:"302",
+ note:"Bell and Telus operate a shared radio network across most of the country.",
+ operators:[
+  {n:"Rogers", mnc:"302-720", note:"Absorbed Shaw/Freedom spectrum in 2023.", al:[
+    ["GSM","B2",1930,1940,"retired","2G off December 2021"],
+    ["UMTS","B5",869,879,"retired"],
+    ["LTE","B2",1940,1960,"active"],
+    ["LTE","B4",2110,2130,"active"],
+    ["LTE","B5",869,879,"active"],
+    ["LTE","B7",2620,2650,"active"],
+    ["LTE","B12",729,740,"active"],
+    ["LTE","B17",734,746,"active"],
+    ["LTE","B66",2155,2170,"active","AWS-3"],
+    ["NR","n78",3450,3650,"active","Up to 200 MHz in urban markets"],
+    ["NR","n66",2155,2170,"active"],
+    ["NR","n71",617,632,"active"]
+  ]},
+  {n:"Bell", mnc:"302-610", note:"", al:[
+    ["UMTS","B5",879,889,"retired","3G off in 2025"],
+    ["LTE","B2",1960,1975,"active"],
+    ["LTE","B4",2130,2145,"active"],
+    ["LTE","B5",879,889,"active"],
+    ["LTE","B7",2650,2670,"active"],
+    ["LTE","B12",740,746,"active"],
+    ["LTE","B13",746,756,"active"],
+    ["LTE","B66",2170,2180,"active","AWS-3"],
+    ["NR","n78",3650,3750,"active","100 MHz"],
+    ["NR","n66",2170,2180,"active"],
+    ["NR","n71",632,647,"active"]
+  ]},
+  {n:"Telus", mnc:"302-220", note:"Shares the radio network with Bell.", al:[
+    ["UMTS","B5",889,894,"retired"],
+    ["LTE","B2",1975,1990,"active"],
+    ["LTE","B4",2145,2155,"active"],
+    ["LTE","B5",889,894,"active"],
+    ["LTE","B7",2670,2690,"active"],
+    ["LTE","B13",746,756,"active","Shared with Bell"],
+    ["LTE","B66",2145,2155,"active","AWS-3"],
+    ["NR","n78",3750,3800,"active"],
+    ["NR","n66",2145,2155,"active"],
+    ["NR","n71",647,652,"licensed"]
+  ]}
+]},
+
+{id:"BR", name:"Brazil", flag:"🇧🇷", iso3:"BRA", mcc:"724",
+ note:"The 2021 auction handed out 700 MHz, 2.3 GHz, 3.5 GHz and 26 GHz; 3G shutdown began in 2025.",
+ operators:[
+  {n:"Vivo", mnc:"724-06", note:"Telefônica Brasil.", al:[
+    ["GSM","B8",935,945,"retired"],
+    ["UMTS","B1",2110,2125,"sunset"],
+    ["LTE","B1",2110,2130,"active"],
+    ["LTE","B3",1805,1825,"active"],
+    ["LTE","B7",2620,2650,"active"],
+    ["LTE","B28",758,768,"active"],
+    ["NR","n78",3550,3650,"active","100 MHz"],
+    ["NR","n28",758,768,"active","DSS"],
+    ["NR","n257",26500,27200,"licensed"]
+  ]},
+  {n:"Claro", mnc:"724-05", note:"América Móvil.", al:[
+    ["GSM","B8",945,955,"retired"],
+    ["UMTS","B1",2125,2145,"sunset"],
+    ["LTE","B1",2130,2150,"active"],
+    ["LTE","B3",1825,1850,"active"],
+    ["LTE","B7",2650,2670,"active"],
+    ["LTE","B28",768,778,"active"],
+    ["NR","n78",3450,3550,"active","100 MHz"],
+    ["NR","n28",768,778,"active"],
+    ["NR","n257",27200,27900,"licensed"]
+  ]},
+  {n:"TIM Brasil", mnc:"724-04", note:"", al:[
+    ["GSM","B8",955,960,"retired"],
+    ["UMTS","B1",2145,2165,"sunset"],
+    ["LTE","B1",2150,2170,"active"],
+    ["LTE","B3",1850,1880,"active"],
+    ["LTE","B7",2670,2690,"active"],
+    ["LTE","B28",778,788,"active"],
+    ["NR","n78",3650,3750,"active","100 MHz"],
+    ["NR","n28",778,788,"active"],
+    ["NR","n257",27900,28600,"licensed"]
+  ]}
+]},
+
+{id:"ZA", name:"South Africa", flag:"🇿🇦", iso3:"ZAF", mcc:"655",
+ note:"The long-delayed 2022 auction finally released 700, 800, 2600 and 3500 MHz to the market.",
+ operators:[
+  {n:"Vodacom", mnc:"655-01", note:"", al:[
+    ["GSM","B8",935,945,"sunset","2G/3G switch-off under way"],
+    ["UMTS","B1",2110,2125,"sunset"],
+    ["LTE","B1",2110,2130,"active"],
+    ["LTE","B3",1805,1825,"active"],
+    ["LTE","B8",935,945,"active"],
+    ["LTE","B20",791,801,"active"],
+    ["LTE","B7",2620,2640,"active"],
+    ["NR","n78",3500,3560,"active","60 MHz"],
+    ["NR","n28",758,768,"active"],
+    ["NR","n1",2125,2130,"active","DSS"],
+    ["NR","n8",935,945,"licensed","Not yet lit"]
+  ]},
+  {n:"MTN", mnc:"655-10", note:"", al:[
+    ["GSM","B8",945,955,"sunset"],
+    ["UMTS","B1",2125,2145,"sunset"],
+    ["LTE","B1",2130,2150,"active"],
+    ["LTE","B3",1825,1850,"active"],
+    ["LTE","B8",945,955,"active"],
+    ["LTE","B20",801,811,"active"],
+    ["LTE","B7",2640,2660,"active"],
+    ["NR","n78",3560,3620,"active","60 MHz"],
+    ["NR","n28",768,778,"active"],
+    ["NR","n1",2145,2150,"active","DSS"]
+  ]},
+  {n:"Telkom", mnc:"655-02", note:"", al:[
+    ["LTE","B1",2150,2160,"active"],
+    ["LTE","B3",1850,1865,"active"],
+    ["LTE","B40",2300,2350,"active"],
+    ["LTE","B7",2660,2680,"active"],
+    ["NR","n78",3620,3660,"active","40 MHz"],
+    ["NR","n28",778,788,"licensed"]
+  ]},
+  {n:"Rain", mnc:"655-06", note:"Data-only network with no voice service of its own.", al:[
+    ["LTE","B40",2350,2400,"active"],
+    ["NR","n78",3660,3720,"active","60 MHz"],
+    ["NR","n28",788,798,"licensed","Held, not deployed"]
+  ]}
+]}
+
+]};
+
+</script>
+<script>
+/* ============================================================
+   STATE
+   ============================================================ */
+const KEY = "spectrum-atlas-v3";
+let DATA, sel = 0, edit = false, q = "";
+let fTech = new Set(TECHS), fStat = new Set(Object.keys(STATUS));
+
+function normalize(d){
+  (d.countries||[]).forEach(c=>{ c.operators=c.operators||[];
+    c.operators.forEach(o=>{ o.al=(o.al||[]).map(a=>{ a[1]=canonBand(a[1]); return a; }); }); });
+  return d;
+}
+function load(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(raw){ const d = JSON.parse(raw); if(d && Array.isArray(d.countries)) return normalize(d); }
+  }catch(e){}
+  return normalize(JSON.parse(JSON.stringify(SEED)));
+}
+function save(){
+  try{ localStorage.setItem(KEY, JSON.stringify(DATA)); }
+  catch(e){ toast("Changes are kept for this session only — storage is unavailable here."); }
+}
+const $ = s => document.querySelector(s);
+const el = (t,c,h)=>{const n=document.createElement(t); if(c)n.className=c; if(h!==undefined)n.innerHTML=h; return n;};
+const esc = s => String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+let toastT;
+function toast(m){ const t=$("#toast"); t.textContent=m; t.hidden=false; clearTimeout(toastT); toastT=setTimeout(()=>t.hidden=true,3200); }
+
+/* stable colour for the operator mark, derived from the name */
+function opHue(n){ let h=0; for(const c of n) h=(h*31+c.charCodeAt(0))%360; return h; }
+
+/* ============================================================
+   DERIVED HELPERS
+   ============================================================ */
+function ulBlock(band, lo, hi){
+  band = canonBand(band); const b = BAND[band]; if(!b) return null;
+  if(b.dup!=="FDD") return null;
+  const gap = b.dl[0]-b.ul[0];
+  return [r1(Math.max(lo-gap, b.ul[0])), r1(Math.min(hi-gap, b.ul[1]))];
+}
+function allocMatches(a){ return fTech.has(a[0]) && fStat.has(a[4]); }
+function isLive(s){ return s==="active"||s==="refarm"; }
+
+function opTechSummary(op){
+  const m = {};
+  op.al.forEach(a=>{ const t=a[0]; if(!m[t]) m[t]={live:false,any:false}; m[t].any=true; if(isLive(a[4])) m[t].live=true; });
+  return TECHS.filter(t=>m[t]).map(t=>({t, live:m[t].live}));
+}
+
+/* ============================================================
+   SPECTRUM CHART
+   ============================================================ */
+const SEGMENTS = [
+  {lo:600,  hi:1000,  nm:"Low band",     w:400},
+  {lo:1400, hi:1530,  nm:"L-band",       w:150},
+  {lo:1690, hi:2200,  nm:"Core mid band",w:510},
+  {lo:2300, hi:2700,  nm:"Upper mid",    w:400},
+  {lo:3300, hi:4200,  nm:"C-band",       w:560},
+  {lo:4400, hi:5000,  nm:"4.7 GHz",      w:180},
+  {lo:5150, hi:5925,  nm:"5 GHz U-NII",  w:150},
+  {lo:24250,hi:29500, nm:"26/28 GHz",    w:220},
+  {lo:37000,hi:43500, nm:"39 GHz",       w:170}
+];
+
+function renderChart(c){
+  const host = $("#chart"); host.innerHTML = "";
+  const blocks = [];
+  c.operators.forEach((op,oi)=>{
+    op.al.forEach(a=>{
+      if(!allocMatches(a)) return;
+      blocks.push({oi, lo:a[2], hi:a[3], t:a[0], band:a[1], st:a[4], dir:"DL"});
+      const u = ulBlock(a[1], a[2], a[3]);
+      if(u) blocks.push({oi, lo:u[0], hi:u[1], t:a[0], band:a[1], st:a[4], dir:"UL"});
+    });
+  });
+  const segs = SEGMENTS.filter(s => blocks.some(b => b.hi>s.lo && b.lo<s.hi));
+  if(!segs.length){
+    host.appendChild(el("div","empty","<h3>Nothing to plot</h3><p>No allocations match the current filters.</p>"));
+    return;
+  }
+  const inner = el("div"); inner.style.minWidth = (150 + segs.length*92) + "px";
+  const flexOf = s => `${(s.w/100).toFixed(2)} 1 0`;
+
+  const head = el("div","seg-head");
+  head.appendChild(Object.assign(el("div"),{style:"flex:0 0 132px;min-width:132px"}));
+  segs.forEach(s=>{
+    const h = el("div","seg-h"); h.style.flex = flexOf(s); h.style.minWidth = "84px";
+    h.innerHTML = `<div class="nm">${s.nm}</div><div class="rg">${fmtF(s.lo)} – ${fmtF(s.hi)}</div>`;
+    head.appendChild(h);
+  });
+  inner.appendChild(head);
+
+  c.operators.forEach((op,oi)=>{
+    const mine = blocks.filter(b=>b.oi===oi);
+    if(!mine.length) return;
+    const lane = el("div","lane");
+    const lbl = el("div","lane-lbl");
+    lbl.innerHTML = `<i style="background:hsl(${opHue(op.n)} 62% 58%)"></i><span>${esc(op.n)}</span>`;
+    lane.appendChild(lbl);
+    segs.forEach(s=>{
+      const sd = el("div","seg"); sd.style.flex = flexOf(s); sd.style.minWidth = "84px";
+      mine.filter(b=>b.hi>s.lo && b.lo<s.hi).forEach(b=>{
+        const lo = Math.max(b.lo, s.lo), hi = Math.min(b.hi, s.hi);
+        const L = (lo-s.lo)/(s.hi-s.lo)*100, W = (hi-lo)/(s.hi-s.lo)*100;
+        const col = freqColor((lo+hi)/2);
+        const d = el("div","blk");
+        d.style.left = L+"%"; d.style.width = Math.max(W,0.5)+"%";
+        if(b.st==="planned"){ d.classList.add("plan"); d.style.color=col; }
+        else if(b.st==="licensed"||b.st==="sunset"||b.st==="retired"){ d.classList.add("idle"); d.style.color=col; }
+        else { d.style.background = col; }
+        if(W > 11) d.textContent = bandLabel(b.t, b.band);
+        d.title = `${op.n} · ${b.t} ${bandLabel(b.t,b.band)} · ${b.dir} ${fmtF(lo)}–${fmtF(hi)} · ${STATUS[b.st]?.l||b.st}`;
+        sd.appendChild(d);
+      });
+      lane.appendChild(sd);
+    });
+    inner.appendChild(lane);
+  });
+
+  const foot = el("div","chart-foot");
+  foot.innerHTML = `
+    <span class="lg"><span class="sw" style="background:var(--f1)"></span>&lt; 1 GHz</span>
+    <span class="lg"><span class="sw" style="background:var(--f2)"></span>1 – 2.3 GHz</span>
+    <span class="lg"><span class="sw" style="background:var(--f3)"></span>2.3 – 3.3 GHz</span>
+    <span class="lg"><span class="sw" style="background:var(--f4)"></span>3.3 – 7 GHz</span>
+    <span class="lg"><span class="sw" style="background:var(--f5)"></span>mmWave</span>
+    <span class="lg" style="margin-left:auto"><span class="sw" style="background:var(--txt2)"></span>In service</span>
+    <span class="lg"><span class="sw idle"></span>Held or switched off</span>
+    <span class="lg"><span class="sw plan"></span>Planned</span>`;
+  inner.appendChild(foot);
+  host.appendChild(inner);
+}
+function fmtF(m){ return m>=1000 ? (m/1000).toFixed(m%1000?2:1).replace(/\.0$/,"")+" GHz" : m+" MHz"; }
+
+/* ============================================================
+   OPERATOR CARDS
+   ============================================================ */
+function renderOps(c){
+  const host = $("#ops"); host.innerHTML = "";
+  const ql = q.trim().toLowerCase();
+  const ops = c.operators.filter(o => !ql || o.n.toLowerCase().includes(ql) || c.name.toLowerCase().includes(ql));
+  if(!ops.length){
+    const e0 = el("div","empty", c.operators.length
+      ? "<h3>Nothing matches that search</h3><p>Clear the search box to see this country again.</p>"
+      : `<h3>${esc(c.name)} is empty</h3>
+         <p>Let Claude search the web for its operators and spectrum, or add them by hand.</p>
+         <div style="display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap">
+           <button class="btn p" data-a="lookup">Auto-fill from the web</button>
+           <button class="btn" data-a="addop">Add an operator</button></div>`);
+    host.appendChild(e0);
+    return;
+  }
+  ops.forEach(op=>{
+    const oi = c.operators.indexOf(op);
+    const card = el("div","op");
+    const head = el("div","op-head");
+    const hue = opHue(op.n);
+    head.innerHTML = `
+      <div class="op-mark" style="background:hsl(${hue} 62% 58%)">${esc(op.n.slice(0,2).toUpperCase())}</div>
+      <div><div class="op-name">${esc(op.n)}</div>
+        <div class="op-sub">${esc(op.mnc||"—")}${op.note?" · "+esc(op.note):""}</div></div>
+      <div class="techs">${opTechSummary(op).map(x=>
+        `<span class="tb ${x.live?"live":"idleT"}" title="${x.live?"Carriers on air":"Spectrum held, nothing on air"}">${x.t==="NR"?"5G NR":x.t==="LTE"?"4G LTE":x.t==="UMTS"?"3G UMTS":"2G GSM"}</span>`).join("")}</div>`;
+    if(edit){
+      const ea = el("div","rowact");
+      ea.innerHTML = `<button class="btn sm" data-a="editop" data-o="${oi}">Edit</button>
+                      <button class="btn sm" data-a="addal" data-o="${oi}">+ Band</button>
+                      <button class="btn sm danger" data-a="delop" data-o="${oi}">Delete</button>`;
+      ea.style.width="100%"; ea.style.justifyContent="flex-start";
+      head.appendChild(ea);
+    }
+    card.appendChild(head);
+
+    const body = el("div","op-body");
+    let shown = 0;
+    TECHS.forEach(t=>{
+      const rows = op.al.map((a,i)=>({a,i})).filter(x=>x.a[0]===t && allocMatches(x.a));
+      if(!rows.length) return;
+      shown += rows.length;
+      const g = el("div","tech-grp");
+      const live = rows.filter(x=>isLive(x.a[4])).length;
+      g.appendChild(el("h4",null,`<span>${TECH_LABEL[t]}</span><span class="ln"></span>
+        <span class="cnt">${rows.length} block${rows.length>1?"s":""} · ${live} on air</span>`));
+      const tb = el("table","al");
+      tb.innerHTML = `<thead><tr>
+        <th>Band</th><th>Downlink block</th><th>Uplink block</th><th>BW</th>
+        <th>Downlink channel</th><th>Uplink channel</th><th>Status</th>${edit?"<th></th>":""}
+      </tr></thead>`;
+      const tbody = el("tbody");
+      rows.forEach(({a,i})=>{
+        const [tech,band,lo,hi,st,note] = a;
+        const b = BAND[canonBand(band)] || {};
+        const dl = channels(tech,band,lo,hi,"dl");
+        const ul = b.dup==="FDD" ? channels(tech,band,lo,hi,"ul") : null;
+        const ub = ulBlock(band,lo,hi);
+        const col = freqColor((lo+hi)/2);
+        const tr = el("tr", isLive(st)?"":"dim");
+        tr.innerHTML = `
+          <td><div class="bandcell">
+              <span class="bandid"><i style="background:${col}"></i>${esc(bandLabel(tech,band))}</span>
+              <span class="bandnm">${esc(b.nm||"")} · ${b.dup||""}</span>
+            </div></td>
+          <td><span class="ch">${lo}–${hi}</span> <span class="chsub">MHz</span><br>
+              <span class="chsub">centre ${dl?dl.fC:"—"} MHz</span></td>
+          <td>${ub?`<span class="ch">${ub[0]}–${ub[1]}</span> <span class="chsub">MHz</span><br>
+              <span class="chsub">centre ${ul?ul.fC:"—"} MHz</span>`
+             :`<span class="chsub">${b.dup==="TDD"?"same block (TDD)":b.dup==="SDL"?"downlink only":"—"}</span>`}</td>
+          <td><span class="ch">${r1(hi-lo)}</span> <span class="chsub">MHz</span></td>
+          <td>${chCell(dl)}</td>
+          <td>${b.dup==="FDD"?chCell(ul):`<span class="chsub">${b.dup==="TDD"?"same as DL":"—"}</span>`}</td>
+          <td><span class="chip st-${st}" title="${esc(STATUS[st]?.d||"")}">${esc(STATUS[st]?.l||st)}</span>
+              ${note?`<div class="note">${esc(note)}</div>`:""}</td>
+          ${edit?`<td><div class="rowact">
+              <button class="iconbtn" data-a="edital" data-o="${oi}" data-i="${i}" title="Edit">✎</button>
+              <button class="iconbtn" data-a="delal" data-o="${oi}" data-i="${i}" title="Delete">✕</button></div></td>`:""}`;
+        tbody.appendChild(tr);
+      });
+      tb.appendChild(tbody); g.appendChild(tb); body.appendChild(g);
+    });
+    if(!shown) body.appendChild(el("div","note","No blocks match the current filters."));
+    card.appendChild(body);
+    host.appendChild(card);
+  });
+}
+function chCell(x){
+  if(!x) return `<span class="chsub">not defined for this band</span>`;
+  const c = x.c!==null && x.c!==undefined ? `<span class="ch">${x.c}</span>` : `<span class="ch">${x.lo}–${x.hi}</span>`;
+  const sub = x.c!==null && x.c!==undefined ? `${x.label} ${x.lo}–${x.hi}` : `${x.label} range`;
+  return `${c}<br><span class="chsub">${sub}</span>`;
+}
+
+/* ============================================================
+   SHELL RENDER
+   ============================================================ */
+function renderList(){
+  const host = $("#clist"); host.innerHTML="";
+  const ql = q.trim().toLowerCase();
+  DATA.countries.forEach((c,i)=>{
+    const hit = !ql || c.name.toLowerCase().includes(ql) || (c.id||"").toLowerCase().includes(ql)
+      || c.operators.some(o=>o.n.toLowerCase().includes(ql));
+    if(!hit) return;
+    const b = el("button","citem"+(i===sel?" sel":""));
+    b.innerHTML = `<span class="fl">${c.flag||"🏳"}</span><span>${esc(c.name)}</span>
+                   <span class="ct">${c.operators.length}</span>`;
+    b.onclick = ()=>{ sel=i; render(); window.scrollTo({top:0,behavior:"smooth"}); };
+    host.appendChild(b);
+  });
+}
+function renderFilters(){
+  const host = $("#filters"); host.innerHTML="";
+  TECHS.forEach(t=>{
+    const b = el("button","fchip"+(fTech.has(t)?" on":""), t==="NR"?"5G NR":t==="LTE"?"4G LTE":t==="UMTS"?"3G UMTS":"2G GSM");
+    b.onclick=()=>{ fTech.has(t)?fTech.delete(t):fTech.add(t); render(); };
+    host.appendChild(b);
+  });
+  host.appendChild(el("span",null,"&nbsp;")).style.flex="0 0 14px";
+  Object.entries(STATUS).forEach(([k,v])=>{
+    const b = el("button","fchip"+(fStat.has(k)?" on":""), v.l);
+    b.title = v.d;
+    b.onclick=()=>{ fStat.has(k)?fStat.delete(k):fStat.add(k); render(); };
+    host.appendChild(b);
+  });
+}
+function render(){
+  if(sel>=DATA.countries.length) sel=0;
+  const c = DATA.countries[sel];
+  document.querySelectorAll(".editonly").forEach(n=>n.hidden=!edit);
+  $("#btnEdit").textContent = "Edit mode: "+(edit?"on":"off");
+  $("#btnEdit").classList.toggle("on", edit);
+  renderList(); renderFilters();
+  if(!c){ $("#hName").textContent="No countries"; $("#chart").innerHTML=""; $("#ops").innerHTML=""; return; }
+
+  $("#hFlag").textContent = c.flag||"🏳";
+  $("#hName").textContent = c.name;
+  const all = c.operators.flatMap(o=>o.al);
+  const held = all.filter(a=>!isLive(a[4])).length;
+  const bands = new Set(all.map(a=>bandLabel(a[0],a[1])));
+  $("#hMeta").innerHTML = `
+    <span>MCC <b>${esc(c.mcc||"—")}</b></span>
+    <span><b>${c.operators.length}</b> operator${c.operators.length===1?"":"s"}</span>
+    <span><b>${all.length}</b> spectrum block${all.length===1?"":"s"}</span>
+    <span><b>${bands.size}</b> distinct band${bands.size===1?"":"s"}</span>
+    <span><b>${held}</b> not on air</span>`;
+  const ha = $("#hActions"); ha.innerHTML="";
+  if(edit){
+    ha.innerHTML = `<button class="btn p sm" data-a="lookup">Auto-fill from the web</button>
+                    <button class="btn sm" data-a="editc">Edit country</button>
+                    <button class="btn sm" data-a="addop">+ Operator</button>
+                    <button class="btn sm danger" data-a="delc">Delete country</button>`;
+  }
+  $("#srcline").innerHTML = `Seed data is a curated starting point — verify against your regulator before operational use.
+    Cross-check this market at
+    <a href="https://www.spectrummonitoring.com/frequencies.php?market=${esc(c.iso3||"")}" target="_blank" rel="noopener">spectrummonitoring.com</a>
+    · <a href="https://www.spectrum-tracker.com/${encodeURIComponent(c.name)}" target="_blank" rel="noopener">spectrum-tracker.com</a>
+    · last edited ${esc(DATA.updated||"—")}`;
+
+  renderChart(c); renderOps(c);
+}
+
+/* ============================================================
+   MODALS / EDITING
+   ============================================================ */
+function openModal(title, bodyHTML, onSave, saveLabel="Save"){
+  const m = $("#modal");
+  m.innerHTML = `<header><h3>${esc(title)}</h3><button class="btn sm" data-x="close">Close</button></header>
+    <div class="body">${bodyHTML}</div>
+    <footer><button class="btn" data-x="close">Cancel</button>
+    ${onSave?`<button class="btn p" data-x="save">${esc(saveLabel)}</button>`:""}</footer>`;
+  $("#ovl").hidden = false;
+  m.querySelectorAll('[data-x="close"]').forEach(b=>b.onclick=closeModal);
+  const sv = m.querySelector('[data-x="save"]');
+  if(sv) sv.onclick = ()=>{ if(onSave()!==false){ save(); closeModal(); render(); } };
+  const first = m.querySelector("input,select,textarea"); if(first) first.focus();
+}
+function closeModal(){ $("#ovl").hidden = true; $("#modal").innerHTML=""; }
+$("#ovl").addEventListener("click", e=>{ if(e.target.id==="ovl") closeModal(); });
+document.addEventListener("keydown", e=>{ if(e.key==="Escape" && !$("#ovl").hidden) closeModal(); });
+
+const field = (id,label,val,type="text",extra="") =>
+  `<div class="f"><label for="${id}">${label}</label><input id="${id}" type="${type}" value="${esc(val??"")}" ${extra}></div>`;
+
+function countryForm(c){
+  return `<div class="fr">${field("f_name","Country name",c?.name||"")}${field("f_flag","Flag emoji",c?.flag||"")}</div>
+    <div class="fr">${field("f_iso","ISO-3 code (used for reference links)",c?.iso3||"")}${field("f_mcc","MCC",c?.mcc||"")}</div>
+    <div class="fr one"><div class="f"><label for="f_note">Notes</label>
+      <textarea id="f_note" rows="3">${esc(c?.note||"")}</textarea></div></div>
+    ${c ? "" : `<label style="display:flex;gap:8px;align-items:center;font-size:13px;margin-top:4px">
+      <input type="checkbox" id="f_auto" checked style="width:auto">
+      <span>Search the web for its operators and spectrum straight away</span></label>`}`;
+}
+function operatorForm(o){
+  return `<div class="fr">${field("f_on","Operator name",o?.n||"")}${field("f_mnc","MCC-MNC","" + (o?.mnc||""))}</div>
+    <div class="fr one"><div class="f"><label for="f_onote">Notes</label>
+      <textarea id="f_onote" rows="3">${esc(o?.note||"")}</textarea></div></div>`;
+}
+function bandOptions(tech, cur){
+  cur = canonBand(cur);
+  return Object.keys(BAND).filter(k=>{
+    const b=BAND[k];
+    if(tech==="NR")   return !!b.nr;
+    if(tech==="LTE")  return !!b.ea && !b.nrOnly;
+    if(tech==="UMTS") return b.ua!==null && b.ua!==undefined;
+    if(tech==="GSM")  return ["B2","B3","B5","B8","B25"].includes(k);
+    return true;
+  }).map(k=>`<option value="${k}" ${k===cur?"selected":""}>${bandLabel(tech,k)} — ${BAND[k].nm} (${BAND[k].dl[0]}–${BAND[k].dl[1]} MHz)</option>`).join("");
+}
+function allocForm(a){
+  const tech = a?.[0]||"LTE", band = a?.[1]||"B3";
+  return `<div class="fr">
+      <div class="f"><label for="f_tech">Technology</label><select id="f_tech">
+        ${TECHS.map(t=>`<option value="${t}" ${t===tech?"selected":""}>${TECH_LABEL[t]}</option>`).join("")}</select></div>
+      <div class="f"><label for="f_band">Band</label><select id="f_band">${bandOptions(tech,band)}</select></div>
+    </div>
+    <div class="fr">
+      ${field("f_lo","Block start — downlink (MHz)",a?.[2]??"","number",'step="0.1"')}
+      ${field("f_hi","Block end — downlink (MHz)",a?.[3]??"","number",'step="0.1"')}
+    </div>
+    <div class="fr">
+      <div class="f"><label for="f_st">Status</label><select id="f_st">
+        ${Object.entries(STATUS).map(([k,v])=>`<option value="${k}" ${k===(a?.[4]||"active")?"selected":""}>${v.l}</option>`).join("")}</select></div>
+      ${field("f_nt","Note (optional)",a?.[5]||"")}
+    </div>
+    <div class="hint" id="prev"></div>`;
+}
+function wireAllocForm(){
+  const t=$("#f_tech"), b=$("#f_band"), lo=$("#f_lo"), hi=$("#f_hi");
+  t.onchange = ()=>{ b.innerHTML = bandOptions(t.value, b.value); preview(); };
+  [b,lo,hi].forEach(n=>n.oninput = preview);
+  b.onchange = ()=>{ const bd=BAND[b.value]; if(bd && !lo.value){ lo.value=bd.dl[0]; hi.value=bd.dl[1]; } preview(); };
+  preview();
+  function preview(){
+    const tech=t.value, band=b.value, L=parseFloat(lo.value), H=parseFloat(hi.value);
+    const bd=BAND[band]; const p=$("#prev");
+    if(!bd || isNaN(L) || isNaN(H) || H<=L){ p.textContent="Enter a downlink block to see the derived channel numbers."; return; }
+    let warn = (L<bd.dl[0]-0.001 || H>bd.dl[1]+0.001)
+      ? `<br><span style="color:var(--warn)">Heads up: this block sits outside the ${band} band edges (${bd.dl[0]}–${bd.dl[1]} MHz).</span>` : "";
+    const d=channels(tech,band,L,H,"dl"), u=bd.dup==="FDD"?channels(tech,band,L,H,"ul"):null;
+    const ub=ulBlock(band,L,H);
+    p.innerHTML = `Downlink ${L}–${H} MHz${d?` · ${d.label} ${d.lo}–${d.hi}${d.c!=null?` (centre ${d.c})`:""}`:""}`
+      + (ub?`<br>Uplink ${ub[0]}–${ub[1]} MHz${u?` · ${u.label} ${u.lo}–${u.hi}${u.c!=null?` (centre ${u.c})`:""}`:""}`:"")
+      + `<br>Bandwidth ${r1(H-L)} MHz · ${bd.dup}` + warn;
+  }
+}
+function readAlloc(){
+  const L=parseFloat($("#f_lo").value), H=parseFloat($("#f_hi").value);
+  if(isNaN(L)||isNaN(H)||H<=L){ toast("Enter a valid block: the end frequency must be above the start."); return null; }
+  const nt=$("#f_nt").value.trim();
+  const row=[$("#f_tech").value,$("#f_band").value,r1(L),r1(H),$("#f_st").value];
+  if(nt) row.push(nt);
+  return row;
+}
+
+/* action dispatch */
+document.addEventListener("click", e=>{
+  const b = e.target.closest("[data-a]"); if(!b) return;
+  const a = b.dataset.a, c = DATA.countries[sel];
+  const oi = b.dataset.o!==undefined ? +b.dataset.o : null;
+  const ix = b.dataset.i!==undefined ? +b.dataset.i : null;
+
+  if(a==="lookup"){ openLookup(sel); return; }
+  if(a==="editc") openModal("Edit country", countryForm(c), ()=>{
+    if(!$("#f_name").value.trim()){ toast("A country needs a name."); return false; }
+    c.name=$("#f_name").value.trim(); c.flag=$("#f_flag").value.trim();
+    c.iso3=$("#f_iso").value.trim().toUpperCase(); c.mcc=$("#f_mcc").value.trim();
+    c.note=$("#f_note").value.trim();
+  });
+  if(a==="delc"){
+    if(confirm(`Delete ${c.name} and all ${c.operators.length} of its operators?`)){
+      DATA.countries.splice(sel,1); sel=0; save(); render(); toast("Country deleted.");
+    }
+  }
+  if(a==="addop") openModal("Add operator", operatorForm(null), ()=>{
+    const n=$("#f_on").value.trim(); if(!n){ toast("An operator needs a name."); return false; }
+    c.operators.push({n, mnc:$("#f_mnc").value.trim(), note:$("#f_onote").value.trim(), al:[]});
+  }, "Add operator");
+  if(a==="editop") openModal("Edit operator", operatorForm(c.operators[oi]), ()=>{
+    const n=$("#f_on").value.trim(); if(!n){ toast("An operator needs a name."); return false; }
+    const o=c.operators[oi]; o.n=n; o.mnc=$("#f_mnc").value.trim(); o.note=$("#f_onote").value.trim();
+  });
+  if(a==="delop"){
+    const o=c.operators[oi];
+    if(confirm(`Delete ${o.n} and its ${o.al.length} spectrum blocks?`)){
+      c.operators.splice(oi,1); save(); render(); toast("Operator deleted.");
+    }
+  }
+  if(a==="addal"){
+    openModal(`Add a band to ${c.operators[oi].n}`, allocForm(null), ()=>{
+      const row=readAlloc(); if(!row) return false; c.operators[oi].al.push(row);
+    }, "Add band");
+    wireAllocForm();
+  }
+  if(a==="edital"){
+    openModal(`Edit band — ${c.operators[oi].n}`, allocForm(c.operators[oi].al[ix]), ()=>{
+      const row=readAlloc(); if(!row) return false; c.operators[oi].al[ix]=row;
+    });
+    wireAllocForm();
+  }
+  if(a==="delal"){
+    const al=c.operators[oi].al;
+    if(confirm(`Remove ${al[ix][0]} ${bandLabel(al[ix][0],al[ix][1])} from ${c.operators[oi].n}?`)){
+      al.splice(ix,1); save(); render();
+    }
+  }
+});
+
+/* ============================================================
+   TOOLBAR
+   ============================================================ */
+$("#btnEdit").onclick = ()=>{ edit=!edit; render(); toast(edit?"Edit mode on — add, change or remove anything.":"Edit mode off."); };
+$("#btnAddCountry").onclick = ()=> openModal("Add country", countryForm(null), ()=>{
+  const n=$("#f_name").value.trim(); if(!n){ toast("A country needs a name."); return false; }
+  DATA.countries.push({id:$("#f_iso").value.trim().toUpperCase().slice(0,2), name:n,
+    flag:$("#f_flag").value.trim()||"🏳", iso3:$("#f_iso").value.trim().toUpperCase(),
+    mcc:$("#f_mcc").value.trim(), note:$("#f_note").value.trim(), operators:[]});
+  sel = DATA.countries.length-1;
+  const auto = $("#f_auto")?.checked;
+  if(auto) setTimeout(()=>openLookup(DATA.countries.length-1), 60);
+}, "Add country");
+
+$("#btnExport").onclick = ()=>{
+  const json = JSON.stringify(DATA,null,1);
+  openModal("Export data", `
+    <p class="hint" style="margin-bottom:10px">Everything on this page as JSON — ${DATA.countries.length} countries,
+      ${DATA.countries.reduce((s,c)=>s+c.operators.length,0)} operators. Copy it, or save the file.</p>
+    <textarea id="f_json" rows="12" style="font-family:ui-monospace,monospace;font-size:12px">${esc(json)}</textarea>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn" id="cpy">Copy to clipboard</button>
+      <button class="btn" id="dl">Save as file</button>
+    </div>`, null);
+  $("#cpy").onclick = async ()=>{
+    const ta=$("#f_json"); ta.select();
+    try{ await navigator.clipboard.writeText(ta.value); toast("Copied."); }
+    catch(e){ document.execCommand("copy"); toast("Copied."); }
+  };
+  $("#dl").onclick = ()=>{
+    if(window.Bridge && Bridge.saveText){
+      try{ Bridge.saveText("spectrum-atlas.json", json); toast("Pick where to send the file."); return; }
+      catch(e){ /* fall through to the browser route */ }
+    }
+    try{
+      const u=URL.createObjectURL(new Blob([json],{type:"application/json"}));
+      const a=document.createElement("a"); a.href=u; a.download="spectrum-atlas.json"; a.click();
+      setTimeout(()=>URL.revokeObjectURL(u),2000);
+      toast("File saved — if nothing downloaded, copy the text instead.");
+    }catch(e){ toast("Downloads are blocked here. Copy the text instead."); }
+  };
+};
+
+$("#btnImport").onclick = ()=>{
+  openModal("Import data", `
+    <p class="hint" style="margin-bottom:10px">Paste a JSON export, or pick a file. This replaces everything currently loaded.</p>
+    <textarea id="f_json" rows="12" placeholder='{"countries":[ … ]}' style="font-family:ui-monospace,monospace;font-size:12px"></textarea>
+    <div style="margin-top:10px"><button class="btn" id="pick">Choose a file…</button></div>`,
+    ()=>{
+      try{
+        const d = JSON.parse($("#f_json").value);
+        if(!d || !Array.isArray(d.countries)) throw 0;
+        DATA = normalize(d); sel = 0; toast("Imported.");
+      }catch(e){ toast("That isn't valid Atlas JSON — it needs a top-level \"countries\" array."); return false; }
+    }, "Replace data");
+  $("#pick").onclick = ()=> $("#fileIn").click();
+};
+$("#fileIn").onchange = e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ()=>{ const ta=$("#f_json"); if(ta) ta.value = r.result; };
+  r.readAsText(f); e.target.value="";
+};
+
+$("#btnReset").onclick = ()=>{
+  if(confirm("Discard your edits and reload the built-in dataset?")){
+    DATA = normalize(JSON.parse(JSON.stringify(SEED))); sel=0; save(); render(); toast("Built-in dataset restored.");
+  }
+};
+$("#btnTheme").onclick = ()=>{
+  const cur = document.documentElement.getAttribute("data-theme")==="light" ? "dark" : "light";
+  document.documentElement.setAttribute("data-theme", cur);
+  try{ localStorage.setItem(KEY+"-theme", cur); }catch(e){}
+};
+$("#q").oninput = e=>{ q = e.target.value; renderList(); renderOps(DATA.countries[sel]); };
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+try{
+  const t = localStorage.getItem(KEY+"-theme");
+  if(t) document.documentElement.setAttribute("data-theme", t);
+  else if(window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches)
+    document.documentElement.setAttribute("data-theme","light");
+}catch(e){}
+DATA = load();
+render();
+
+</script>
+<script>
+/* ============================================================
+   AUTO-FILL: research a country and turn it into Atlas rows
+   ============================================================ */
+const AIKEY = KEY + "-apikey";
+const getKey = () => { try{ return localStorage.getItem(AIKEY) || ""; }catch(e){ return ""; } };
+const setKey = v => { try{ v ? localStorage.setItem(AIKEY,v) : localStorage.removeItem(AIKEY); }catch(e){} };
+
+function bandVocab(){
+  return Object.keys(BAND).map(k=>{
+    const b = BAND[k];
+    const nm = b.nrOnly ? k : (b.nr ? `${k}/${b.nr}` : k);
+    return `${nm} ${b.dl[0]}-${b.dl[1]} ${b.dup}`;
+  }).join("; ");
+}
+
+function lookupPrompt(name){
+  return `Research the mobile network operators of ${name} and return their spectrum holdings as JSON.
+
+Search the web for the national regulator's spectrum register, recent auction results, and operator technical documentation. Prefer regulator and auction sources over consumer band-checker sites.
+
+Return ONLY a JSON object, no prose, no markdown fences, in exactly this shape:
+
+{"name":"${name}","flag":"<flag emoji>","iso3":"<ISO 3166-1 alpha-3>","mcc":"<mobile country code>",
+ "note":"<one or two sentences on the market: how many networks, notable sharing deals, 2G/3G switch-off status>",
+ "operators":[
+   {"n":"<operator brand name>","mnc":"<MCC-MNC, e.g. 425-02>","note":"<one short sentence, or empty string>",
+    "al":[["<tech>","<band>",<blockStartMHz>,<blockEndMHz>,"<status>","<short note or omit>"]]}
+ ]}
+
+Rules for the "al" rows:
+- tech is exactly one of: GSM, UMTS, LTE, NR.
+- band is exactly one of these identifiers (downlink edges and duplex mode shown for reference):
+  ${bandVocab()}
+  For NR use the n-name (n78, n28, n1 …); for LTE/UMTS/GSM use the B-name.
+- blockStart and blockEnd are that operator's own DOWNLINK block in MHz, not the whole band. For TDD and supplementary-downlink bands give the single block. Never give uplink figures — the uplink is derived from the band's duplex spacing.
+- status is exactly one of:
+    "active"   carriers on air today
+    "refarm"   on air but being converted to a newer technology
+    "licensed" the operator holds this spectrum but has nothing on air in it
+    "planned"  awarded or announced, launch still pending
+    "sunset"   still on air but scheduled for switch-off
+    "retired"  already switched off, or the licence was surrendered
+- Include spectrum that is held but NOT in use, and spectrum that has been switched off. That distinction is the point of this database, so do not silently drop idle or retired holdings.
+- One row per contiguous block per technology. If two technologies share a block (DSS, or LTE being refarmed to NR), give one row for each.
+- Cover every MNO with its own radio network. Skip pure MVNOs, but mention them in "note".
+- Where a source only gives a total holding rather than exact block edges, place the block plausibly inside the band and say so in the row note.
+
+Output the JSON object and nothing else.`;
+}
+
+async function callClaude(prompt){
+  const key = getKey();
+  const headers = {"Content-Type":"application/json"};
+  if(key){
+    headers["x-api-key"] = key;
+    headers["anthropic-version"] = "2023-06-01";
+    headers["anthropic-dangerous-direct-browser-access"] = "true";
+  }
+  const res = await fetch("https://api.anthropic.com/v1/messages",{
+    method:"POST", headers,
+    body: JSON.stringify({
+      model:"claude-sonnet-4-6",
+      max_tokens: 8000,
+      messages:[{role:"user", content: prompt}],
+      tools:[{type:"web_search_20250305", name:"web_search"}]
+    })
+  });
+  if(!res.ok){
+    const body = await res.text().catch(()=> "");
+    throw new Error(`The API returned ${res.status}. ${body.slice(0,240)}`);
+  }
+  const data = await res.json();
+  const text = (data.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("\n").trim();
+  if(!text) throw new Error("The model replied without any text — try again.");
+  if(data.stop_reason === "max_tokens") throw new Error("The answer was cut off before the JSON finished. Try a country with fewer operators, or use the copy-the-prompt route.");
+  return text;
+}
+
+function parseCountryJSON(txt){
+  let t = String(txt).trim().replace(/^```(?:json)?/i,"").replace(/```$/,"").trim();
+  const i = t.indexOf("{"), j = t.lastIndexOf("}");
+  if(i<0 || j<=i) throw new Error("No JSON object found in that text.");
+  return JSON.parse(t.slice(i, j+1));
+}
+
+const TECH_ALIAS = {"2G":"GSM","3G":"UMTS","4G":"LTE","5G":"NR","LTE-A":"LTE","WCDMA":"UMTS","HSPA":"UMTS","5GNR":"NR"};
+
+function sanitizeCountry(raw){
+  const warn = [];
+  if(!raw || typeof raw!=="object") throw new Error("That isn't a country object.");
+  const c = {
+    id: String(raw.iso3||raw.id||"").toUpperCase().slice(0,2),
+    name: String(raw.name||"").trim(),
+    flag: String(raw.flag||"🏳").trim(),
+    iso3: String(raw.iso3||"").toUpperCase().slice(0,3),
+    mcc: String(raw.mcc||"").trim(),
+    note: String(raw.note||"").trim(),
+    operators: []
+  };
+  if(!c.name) throw new Error("The result has no country name.");
+  const ops = Array.isArray(raw.operators) ? raw.operators : [];
+  ops.forEach(o=>{
+    const name = String(o?.n || o?.name || "").trim();
+    if(!name){ warn.push("Skipped an operator with no name."); return; }
+    const al = [];
+    (Array.isArray(o.al)? o.al : []).forEach(row=>{
+      if(!Array.isArray(row) || row.length<4){ warn.push(`${name}: skipped a malformed row.`); return; }
+      let [t,bd,lo,hi,st,nt] = row;
+      t = TECH_ALIAS[String(t).toUpperCase()] || String(t).toUpperCase();
+      if(!TECHS.includes(t)){ warn.push(`${name}: unknown technology "${row[0]}".`); return; }
+      const band = canonBand(String(bd).trim());
+      const B = BAND[band];
+      if(!B){ warn.push(`${name}: band "${bd}" isn't in the band table — row dropped.`); return; }
+      lo = parseFloat(lo); hi = parseFloat(hi);
+      if(isNaN(lo)||isNaN(hi)){ warn.push(`${name}: ${bd} had no usable frequencies.`); return; }
+      if(hi < lo) [lo,hi] = [hi,lo];
+      // an uplink block was given by mistake — shift it up to the downlink
+      if(B.dup==="FDD" && hi <= B.ul[1]+0.01 && lo >= B.ul[0]-0.01 && lo < B.dl[0]){
+        const g = B.dl[0]-B.ul[0]; lo += g; hi += g;
+        warn.push(`${name}: ${bd} looked like an uplink block, moved to the matching downlink.`);
+      }
+      const cl = [Math.max(lo,B.dl[0]), Math.min(hi,B.dl[1])];
+      if(cl[1] - cl[0] <= 0){ warn.push(`${name}: ${bd} ${lo}–${hi} MHz falls outside the band — row dropped.`); return; }
+      if(Math.abs(cl[0]-lo)>0.01 || Math.abs(cl[1]-hi)>0.01) warn.push(`${name}: ${bd} ${lo}–${hi} MHz clipped to the band edges.`);
+      st = String(st||"active").toLowerCase();
+      if(!STATUS[st]){ warn.push(`${name}: unknown status "${row[4]}", treated as in service.`); st = "active"; }
+      const out = [t, band, r1(cl[0]), r1(cl[1]), st];
+      if(nt) out.push(String(nt).trim());
+      al.push(out);
+    });
+    if(!al.length) warn.push(`${name}: no usable spectrum rows.`);
+    c.operators.push({n:name, mnc:String(o.mnc||"").trim(), note:String(o.note||"").trim(), al});
+  });
+  if(!c.operators.length) throw new Error("The result contained no operators.");
+  return {country:c, warn};
+}
+
+/* ---------- the lookup dialog ---------- */
+function openLookup(ci){
+  const target = DATA.countries[ci];
+  const nm = target.name;
+  let found = null;
+
+  openModal(`Look up ${nm}`, `
+    <p class="hint" style="margin-bottom:12px">Claude will search the web for ${esc(nm)}'s regulator records, auction
+      results and operator documentation, then return operators and spectrum blocks in this page's own format.
+      Nothing is written until you review it.</p>
+    <div id="lkKeyBox" hidden style="margin-bottom:12px">
+      <div class="f"><label for="lkKey">Anthropic API key</label>
+        <input id="lkKey" type="text" placeholder="sk-ant-…" value="${esc(getKey())}"></div>
+      <div class="hint">Required in the Android app and when this page runs from your own disk. It is stored on
+        this device only and goes straight to api.anthropic.com. Leave it blank inside claude.ai.</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn p" id="lkGo">Search and fill in</button>
+      <button class="btn" id="lkKeyToggle">API key</button>
+      <button class="btn" id="lkCopy">Copy the prompt instead</button>
+    </div>
+    <div id="lkStatus" class="hint" style="margin-top:12px"></div>
+    <div id="lkOut" style="margin-top:12px"></div>
+    <div style="margin-top:14px;border-top:1px solid var(--line);padding-top:12px">
+      <div class="f"><label for="lkJson">…or paste a JSON result you got elsewhere</label>
+        <textarea id="lkJson" rows="4" placeholder='{"name":"…","operators":[…]}'
+          style="font-family:ui-monospace,monospace;font-size:12px"></textarea></div>
+      <button class="btn sm" id="lkUse" style="margin-top:8px">Use this text</button>
+    </div>`, null);
+
+  const S = m => { $("#lkStatus").innerHTML = m; };
+  const inApp = !!(window.Bridge && Bridge.isApp);
+  if(inApp && !getKey()) $("#lkKeyBox").hidden = false;
+
+  $("#lkKeyToggle").onclick = ()=>{ const b=$("#lkKeyBox"); b.hidden=!b.hidden; if(!b.hidden) $("#lkKey").focus(); };
+  $("#lkCopy").onclick = async ()=>{
+    try{ await navigator.clipboard.writeText(lookupPrompt(nm)); S("Prompt copied. Paste it into any Claude chat with web search on, then bring the JSON back into the box below."); }
+    catch(e){ $("#lkJson").value = lookupPrompt(nm); S("Clipboard is blocked here — the prompt is in the box below instead. Copy it out, then paste the answer back over it."); }
+  };
+  $("#lkUse").onclick = ()=>{
+    try{ show(sanitizeCountry(parseCountryJSON($("#lkJson").value))); S(""); }
+    catch(e){ S(`<span style="color:var(--sunset)">${esc(e.message)}</span>`); }
+  };
+  $("#lkGo").onclick = async ()=>{
+    const k = $("#lkKey"); if(k) setKey(k.value.trim());
+    $("#lkGo").disabled = true; $("#lkOut").innerHTML = "";
+    S(`Searching for ${esc(nm)} — regulator records and auction results usually take 30 to 60 seconds.`);
+    try{
+      const txt = await callClaude(lookupPrompt(nm));
+      show(sanitizeCountry(parseCountryJSON(txt)));
+      S("");
+    }catch(e){
+      const net = (e instanceof TypeError) || /failed to fetch|networkerror|load failed/i.test(e.message||"");
+      S(`<span style="color:var(--sunset)">${esc(net ? "The browser couldn't reach api.anthropic.com." : e.message)}</span><br>`
+        + (inApp
+          ? `Check that the phone is online and that an API key is set above — the app always needs its own key.
+             Otherwise use <b>Copy the prompt instead</b>: paste it into any Claude chat with web search on and
+             bring the JSON back to the box below.`
+          : net
+          ? `That is expected when this page is opened straight from a file on your disk — browsers block cross-site
+             calls from <code>file://</code> pages whatever key you use. Two ways round it: serve the page over http
+             (<code>python3 -m http.server</code> in its folder) and add an API key above, or use
+             <b>Copy the prompt instead</b> — paste it into any Claude chat with web search on and bring the JSON
+             back to the box below.`
+          : `Check the API key above, or use <b>Copy the prompt instead</b>.`));
+    }
+    $("#lkGo").disabled = false;
+  };
+
+  function show({country, warn}){
+    found = country;
+    const blocks = country.operators.reduce((s,o)=>s+o.al.length,0);
+    $("#lkOut").innerHTML = `
+      <div style="border:1px solid var(--line2);border-radius:10px;padding:12px">
+        <div style="font-family:var(--disp);font-weight:600;margin-bottom:8px">
+          ${esc(country.flag)} ${esc(country.name)} — ${country.operators.length} operators, ${blocks} blocks</div>
+        <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px">
+          ${country.operators.map((o,i)=>`
+            <label style="display:flex;gap:8px;align-items:baseline;font-size:13px">
+              <input type="checkbox" class="lkOp" data-i="${i}" checked style="width:auto">
+              <span><b>${esc(o.n)}</b> <span class="chsub">${esc(o.mnc||"")}</span><br>
+                <span class="chsub">${o.al.length} blocks · ${[...new Set(o.al.map(a=>a[0]))].join(" · ")} ·
+                ${o.al.filter(a=>!isLive(a[4])).length} not on air</span></span></label>`).join("")}
+        </div>
+        <div class="f" style="margin-bottom:10px"><label>How to apply it</label>
+          <select id="lkMode">
+            <option value="merge">Add operators I don't already have</option>
+            <option value="replace">Replace every operator in ${esc(nm)}</option>
+          </select></div>
+        <label style="display:flex;gap:8px;font-size:13px;margin-bottom:10px">
+          <input type="checkbox" id="lkMeta" checked style="width:auto">
+          <span>Also take the flag, ISO code, MCC and market note</span></label>
+        <button class="btn p" id="lkApply">Import into ${esc(nm)}</button>
+      </div>
+      ${warn.length? `<details style="margin-top:10px"><summary class="hint" style="cursor:pointer">
+          ${warn.length} thing${warn.length>1?"s":""} the importer had to adjust</summary>
+          <ul class="hint" style="margin:6px 0 0;padding-left:18px">${warn.map(w=>`<li>${esc(w)}</li>`).join("")}</ul>
+        </details>` : ""}`;
+    $("#lkApply").onclick = ()=>{
+      const keep = [...document.querySelectorAll(".lkOp")].filter(x=>x.checked).map(x=>found.operators[+x.dataset.i]);
+      if(!keep.length){ toast("Tick at least one operator first."); return; }
+      const mode = $("#lkMode").value;
+      if($("#lkMeta").checked){
+        if(found.flag) target.flag = found.flag;
+        if(found.iso3) target.iso3 = found.iso3;
+        if(found.mcc)  target.mcc  = found.mcc;
+        if(found.note) target.note = found.note;
+      }
+      let added = 0, skipped = 0;
+      if(mode==="replace"){ target.operators = keep.map(o=>JSON.parse(JSON.stringify(o))); added = keep.length; }
+      else keep.forEach(o=>{
+        if(target.operators.some(x=>x.n.toLowerCase()===o.n.toLowerCase())) skipped++;
+        else { target.operators.push(JSON.parse(JSON.stringify(o))); added++; }
+      });
+      sel = ci; save(); closeModal(); render();
+      toast(`${added} operator${added===1?"":"s"} imported${skipped?`, ${skipped} already here`:""}. Check the blocks before you rely on them.`);
+    };
+  }
+}
+
+</script>
+</body>
+</html>

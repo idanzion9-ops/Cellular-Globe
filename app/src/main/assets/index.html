@@ -2050,11 +2050,17 @@ try{
   // called from Java
   window.__update = function(state, detail){
     if(state === "checking")  return show("Checking GitHub for a newer version…", null);
-    if(state === "current")   { show("<b>Up to date.</b> This is the latest version on GitHub.", null);
+    if(state === "current")   { show("<b>Up to date.</b> " + DATA.countries.length
+                                  + " countries loaded — this matches the copy on GitHub.", null);
                                 setTimeout(()=>{ bar.hidden = true; }, 4000); return; }
     if(state === "ready")     return show("<b>A newer version is ready.</b> Your saved data is kept.",
                                           ()=>{ try{ Bridge.reloadApp(); }catch(e){ location.reload(); } });
-    if(state === "failed")    return show("Could not reach GitHub" + (detail ? " — " + esc(detail) : "") + ".", null);
+    if(state === "failed"){
+      let src = "";
+      try{ src = Bridge.updateSource ? Bridge.updateSource() : ""; }catch(e){}
+      return show("<b>Update check failed.</b> " + (detail ? esc(detail) : "Could not reach GitHub.")
+        + (src ? '<br><span style="opacity:.75;font-size:12px;word-break:break-all">Source: ' + esc(src) + "</span>" : ""), null);
+    }
   };
 
   chk.onclick = ()=>{ try{ Bridge.checkUpdate(); }catch(e){ show("Update check is only available in the app.", null); } };

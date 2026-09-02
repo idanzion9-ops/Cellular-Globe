@@ -48,6 +48,7 @@ public class MainActivity extends Activity {
     private ValueCallback<Uri[]> pendingPicker;
     private File pageFile;
     private volatile boolean checking = false;
+    private volatile boolean loudPending = false;
 
     @Override
     protected void onCreate(Bundle state) {
@@ -181,9 +182,14 @@ public class MainActivity extends Activity {
      * when false it only speaks up if an update is actually waiting.
      */
     private void checkForUpdate(final boolean loud) {
+        if (loud) {
+            loudPending = true;
+            toPage("checking", null);
+        }
+        // An already-running silent check will now report its result out loud,
+        // so a button tap is never swallowed.
         if (checking) return;
         checking = true;
-        if (loud) toPage("checking", null);
 
         new Thread(new Runnable() {
             @Override
@@ -196,6 +202,9 @@ public class MainActivity extends Activity {
                     conn.setRequestProperty("Cache-Control", "no-cache");
                     conn.setRequestProperty("User-Agent", "CellularGlobe");
                     int code = conn.getResponseCode();
+                    if (code == 404) throw new Exception(
+                            "HTTP 404 — GitHub will not serve this file. The repository is "
+                          + "probably private, or the branch or path has changed.");
                     if (code != 200) throw new Exception("HTTP " + code);
 
                     byte[] remote = readAll(conn.getInputStream());
@@ -210,15 +219,16 @@ public class MainActivity extends Activity {
                     }
 
                     if (sha256(remote).equals(sha256(local))) {
-                        if (loud) toPage("current", null);
+                        if (loudPending) toPage("current", null);
                     } else {
                         writePage(remote);
                         toPage("ready", null);
                     }
                 } catch (Exception e) {
-                    if (loud) toPage("failed", e.getMessage());
+                    if (loudPending) toPage("failed", e.getMessage());
                 } finally {
                     if (conn != null) conn.disconnect();
+                    loudPending = false;
                     checking = false;
                 }
             }
@@ -270,6 +280,11 @@ public class MainActivity extends Activity {
                     if (web != null) web.loadUrl(HOME);
                 }
             });
+        }
+
+        @JavascriptInterface
+        public String updateSource() {
+            return UPDATE_URL;
         }
 
         @JavascriptInterface

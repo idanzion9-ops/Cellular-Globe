@@ -17,30 +17,49 @@ import android.widget.Toast;
 import androidx.core.content.FileProvider;
 import androidx.webkit.WebViewAssetLoader;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 
 /**
- * Cellular Globe is a single HTML page living in assets/. It is served over a real
- * https origin by WebViewAssetLoader rather than from file://, which is what lets
- * localStorage persist reliably and lets the page reach api.anthropic.com.
+ * Cellular Globe is a single HTML page. Rather than baking it into the APK for good,
+ * the shell copies it into internal storage on first run and serves it from there.
+ * A background check pulls a newer copy from GitHub, so pushing to main updates the
+ * running app without a reinstall. Both copies are served from the same https origin,
+ * which is what keeps the user's saved data intact across an update.
  */
 public class MainActivity extends Activity {
 
     private static final String ORIGIN = "https://appassets.androidplatform.net";
-    private static final String HOME = ORIGIN + "/assets/index.html";
+    private static final String HOME = ORIGIN + "/app/index.html";
+    private static final String UPDATE_URL =
+            "https://raw.githubusercontent.com/idanzion9-ops/Cellular-Globe/main/app/src/main/assets/index.html";
     private static final int FILE_PICKER = 1001;
+    private static final int MIN_SANE_PAGE_BYTES = 20000;
 
     private WebView web;
     private ValueCallback<Uri[]> pendingPicker;
+    private File pageFile;
+    private volatile boolean checking = false;
 
     @Override
     protected void onCreate(Bundle state) {
         super.onCreate(state);
 
+        File webDir = new File(getFilesDir(), "web");
+        if (!webDir.exists()) webDir.mkdirs();
+        pageFile = new File(webDir, "index.html");
+        seedFromAssetsIfNeeded();
+
         final WebViewAssetLoader loader = new WebViewAssetLoader.Builder()
+                .addPathHandler("/app/", new WebViewAssetLoader.InternalStoragePathHandler(this, webDir))
                 .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this))
                 .build();
 
@@ -57,6 +76,7 @@ public class MainActivity extends Activity {
         s.setBuiltInZoomControls(true);
         s.setDisplayZoomControls(false);
         s.setTextZoom(100);
+        s.setCacheMode(WebSettings.LOAD_NO_CACHE);
 
         web.setWebViewClient(new WebViewClient() {
             @Override
@@ -68,13 +88,18 @@ public class MainActivity extends Activity {
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 Uri url = request.getUrl();
                 if (url.toString().startsWith(ORIGIN)) return false;
-                // Reference links (spectrummonitoring and friends) open in the real browser.
                 try {
                     startActivity(new Intent(Intent.ACTION_VIEW, url));
                 } catch (Exception e) {
                     Toast.makeText(MainActivity.this, "No app can open that link.", Toast.LENGTH_SHORT).show();
                 }
                 return true;
+            }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                // Quiet check on every launch. Only speaks up if something is actually new.
+                checkForUpdate(false);
             }
         });
 
@@ -97,15 +122,111 @@ public class MainActivity extends Activity {
 
         web.addJavascriptInterface(new Bridge(), "Bridge");
 
-        if (state != null) {
-            web.restoreState(state);
-        } else {
-            web.loadUrl(HOME);
+        if (state != null) web.restoreState(state);
+        else web.loadUrl(HOME);
+    }
+
+    /** First run, or a reinstall whose bundled page is newer than the cached one. */
+    private void seedFromAssetsIfNeeded() {
+        try {
+            if (pageFile.exists()) {
+                long installed = getPackageManager()
+                        .getPackageInfo(getPackageName(), 0).lastUpdateTime;
+                if (pageFile.lastModified() >= installed) return;
+            }
+            InputStream in = getAssets().open("index.html");
+            byte[] data = readAll(in);
+            in.close();
+            writePage(data);
+        } catch (Exception e) {
+            // If this fails the loader still has /assets/ as a fallback path.
         }
     }
 
-    /** Export writes a file the user can send anywhere, without asking for storage permission. */
+    private static byte[] readAll(InputStream in) throws Exception {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        byte[] buf = new byte[16384];
+        int n;
+        while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+        return out.toByteArray();
+    }
+
+    private void writePage(byte[] data) throws Exception {
+        FileOutputStream fos = new FileOutputStream(pageFile);
+        fos.write(data);
+        fos.close();
+    }
+
+    private static String sha256(byte[] data) throws Exception {
+        byte[] digest = MessageDigest.getInstance("SHA-256").digest(data);
+        StringBuilder sb = new StringBuilder();
+        for (byte b : digest) sb.append(String.format("%02x", b));
+        return sb.toString();
+    }
+
+    private void toPage(final String state, final String detail) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (web == null) return;
+                String d = detail == null ? "" : detail.replace("\\", "\\\\").replace("'", "\\'");
+                web.evaluateJavascript(
+                        "window.__update && window.__update('" + state + "','" + d + "')", null);
+            }
+        });
+    }
+
+    /**
+     * Pulls the page from GitHub. When loud is true the page reports every outcome;
+     * when false it only speaks up if an update is actually waiting.
+     */
+    private void checkForUpdate(final boolean loud) {
+        if (checking) return;
+        checking = true;
+        if (loud) toPage("checking", null);
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                HttpURLConnection conn = null;
+                try {
+                    conn = (HttpURLConnection) new URL(UPDATE_URL).openConnection();
+                    conn.setConnectTimeout(12000);
+                    conn.setReadTimeout(20000);
+                    conn.setRequestProperty("Cache-Control", "no-cache");
+                    conn.setRequestProperty("User-Agent", "CellularGlobe");
+                    int code = conn.getResponseCode();
+                    if (code != 200) throw new Exception("HTTP " + code);
+
+                    byte[] remote = readAll(conn.getInputStream());
+                    // A truncated or error body must never replace a working page.
+                    if (remote.length < MIN_SANE_PAGE_BYTES) throw new Exception("the download looked incomplete");
+
+                    byte[] local = new byte[0];
+                    if (pageFile.exists()) {
+                        FileInputStream fin = new FileInputStream(pageFile);
+                        local = readAll(fin);
+                        fin.close();
+                    }
+
+                    if (sha256(remote).equals(sha256(local))) {
+                        if (loud) toPage("current", null);
+                    } else {
+                        writePage(remote);
+                        toPage("ready", null);
+                    }
+                } catch (Exception e) {
+                    if (loud) toPage("failed", e.getMessage());
+                } finally {
+                    if (conn != null) conn.disconnect();
+                    checking = false;
+                }
+            }
+        }).start();
+    }
+
     public class Bridge {
+        /** Export: writes the file, then hands it to Android's share sheet. No permissions needed. */
         @JavascriptInterface
         public void saveText(final String name, final String content) {
             runOnUiThread(new Runnable() {
@@ -137,6 +258,21 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public void checkUpdate() {
+            checkForUpdate(true);
+        }
+
+        @JavascriptInterface
+        public void reloadApp() {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (web != null) web.loadUrl(HOME);
+                }
+            });
+        }
+
+        @JavascriptInterface
         public boolean isApp() {
             return true;
         }
@@ -145,19 +281,23 @@ public class MainActivity extends Activity {
     @Override
     protected void onActivityResult(int request, int result, Intent data) {
         super.onActivityResult(request, result, data);
-        if (request != FILE_PICKER) return;
-        if (pendingPicker == null) return;
+        if (request != FILE_PICKER || pendingPicker == null) return;
         pendingPicker.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(result, data));
         pendingPicker = null;
     }
 
-    /** Back closes an open dialog first, and only then leaves the app. */
+    /** Back closes the topmost layer — dialog, then the spectrum map, then the country list. */
     @Override
     public void onBackPressed() {
         web.evaluateJavascript(
-                "(function(){var o=document.getElementById('ovl');"
-                        + "if(o&&!o.hidden){o.hidden=true;"
-                        + "var m=document.getElementById('modal');if(m)m.innerHTML='';return 'closed';}"
+                "(function(){"
+                        + "var o=document.getElementById('ovl');"
+                        + "if(o&&!o.hidden){o.hidden=true;var m=document.getElementById('modal');"
+                        + "if(m)m.innerHTML='';return 'closed';}"
+                        + "var w=document.getElementById('chartWin');"
+                        + "if(w&&!w.hidden){w.hidden=true;return 'closed';}"
+                        + "var c=document.getElementById('cmenu');"
+                        + "if(c&&!c.hidden){c.hidden=true;return 'closed';}"
                         + "return 'exit';})()",
                 new ValueCallback<String>() {
                     @Override

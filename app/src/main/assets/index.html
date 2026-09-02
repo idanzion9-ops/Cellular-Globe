@@ -211,9 +211,67 @@ table.al tr.dim td{opacity:.72}
   table.al th:nth-child(4),table.al td:nth-child(4){display:none}
 }
 @media(max-width:600px){
-  .wrap{padding:0 12px 60px}.top-in{padding:10px 12px}
+  .wrap{padding:0 12px 60px}.top-in{padding:10px 12px;gap:10px}
+  .brand .sub{display:none}
+  .brand h1{font-size:17px}
+  .cmenu-in{padding:12px}
   table.al th:nth-child(3),table.al td:nth-child(3){display:none}
 }
+
+/* ---------- country picker in the header ---------- */
+.cpick{display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line2);
+  border-radius:10px;padding:7px 12px;font-size:14px;font-weight:600;max-width:260px;
+  overflow:hidden;white-space:nowrap}
+.cpick:hover{background:var(--panel2)}
+.cpick .fl{font-size:16px;flex:0 0 auto}
+.cpick .nm{overflow:hidden;text-overflow:ellipsis}
+.cpick .car{color:var(--txt3);font-size:10px;flex:0 0 auto}
+.cpick.open{border-color:var(--f3)}
+.cmenu{position:absolute;left:0;right:0;top:100%;background:var(--panel);
+  border-bottom:1px solid var(--line2);box-shadow:var(--shadow);z-index:45;
+  max-height:min(70vh,560px);overflow:auto}
+.cmenu[hidden]{display:none}
+.cmenu-in{max-width:1360px;margin:0 auto;padding:12px 20px 16px}
+.cmenu .search{margin-bottom:10px;position:sticky;top:0;background:var(--panel);padding-bottom:8px}
+.clist{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:3px}
+.cmenu .hintrow{font-size:11.5px;color:var(--txt3);margin:2px 0 8px}
+
+/* ---------- spectrum map launcher + floating window ---------- */
+.launchers{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:2px}
+.mapicon{display:inline-flex;align-items:flex-end;gap:2px;height:13px}
+.mapicon i{width:3px;border-radius:1px;display:block}
+.mapicon i:nth-child(1){height:7px;background:var(--f1)}
+.mapicon i:nth-child(2){height:13px;background:var(--f2)}
+.mapicon i:nth-child(3){height:5px;background:var(--f3)}
+.mapicon i:nth-child(4){height:10px;background:var(--f4)}
+.btn.map{padding:8px 14px;font-weight:600}
+.fw{position:fixed;inset:0;z-index:80;background:rgba(6,10,16,.62);backdrop-filter:blur(4px);
+  display:grid;place-items:center;padding:14px}
+.fw[hidden]{display:none}
+.fw-box{background:var(--panel);border:1px solid var(--line2);border-radius:16px;
+  width:min(1260px,100%);max-width:100%;min-width:0;max-height:90vh;
+  display:flex;flex-direction:column;box-shadow:var(--shadow);overflow:hidden}
+.fw-box>header{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line)}
+.fw-box>header h3{font-size:15px;margin-right:auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fw-body{padding:14px;overflow:auto;min-height:0;min-width:0}
+.fw-body .chart{border:none;background:none;padding:0;box-shadow:none}
+@media(max-width:700px){
+  .fw{padding:6px}
+  .fw-box{max-height:95vh;border-radius:12px}
+  .fw-body{padding:10px}
+}
+
+/* ---------- operators now use the full width ---------- */
+.grid{display:block}
+.ops{margin-top:22px}
+
+/* ---------- update banner ---------- */
+.ubar{display:flex;align-items:center;gap:10px;background:color-mix(in srgb,var(--f2) 14%,var(--panel));
+  border:1px solid color-mix(in srgb,var(--f2) 45%,transparent);border-radius:10px;
+  padding:9px 13px;margin-top:14px;font-size:13.5px}
+.ubar[hidden]{display:none}
+.ubar b{font-weight:600}
+
 </style>
 </head>
 <body>
@@ -224,12 +282,26 @@ table.al tr.dim td{opacity:.72}
       <h1>Cellular Globe</h1>
       <span class="sub">Mobile operator frequencies &amp; channel numbers</span>
     </div>
+    <button class="cpick" id="cpick" aria-haspopup="listbox" aria-expanded="false">
+      <span class="fl" id="cpickFlag">🌍</span><span class="nm" id="cpickName">—</span><span class="car">▾</span>
+    </button>
     <div class="tools">
+      <button class="btn sm" id="btnUpdate" hidden title="Pull the latest version from GitHub">Check for updates</button>
       <button class="btn sm" id="btnTheme" title="Switch light / dark">◐ Theme</button>
       <button class="btn sm" id="btnImport">Import JSON</button>
       <button class="btn sm" id="btnExport">Export JSON</button>
       <button class="btn sm danger" id="btnReset">Reset data</button>
       <button class="btn" id="btnEdit">Edit mode: off</button>
+    </div>
+  </div>
+  <div class="cmenu" id="cmenu" hidden>
+    <div class="cmenu-in">
+      <div class="search"><input type="text" id="q" placeholder="Search a country, code or operator…"></div>
+      <div class="hintrow" id="qhint"></div>
+      <div class="clist" id="clist"></div>
+      <div style="margin-top:12px" class="editonly" hidden>
+        <button class="btn sm" id="btnAddCountry">+ Add a country</button>
+      </div>
     </div>
   </div>
 </header>
@@ -242,24 +314,33 @@ table.al tr.dim td{opacity:.72}
         <div class="ttl" id="hName">—</div>
         <div class="meta" id="hMeta"></div>
       </div>
-      <div style="margin-left:auto;display:flex;gap:8px" id="hActions"></div>
+      <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap" id="hActions"></div>
     </div>
-    <div class="chart"><div class="chart-inner" id="chart"></div></div>
-    <div class="srcline" id="srcline"></div>
+    <div class="launchers">
+      <button class="btn map" id="btnMap">
+        <span class="mapicon" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        Spectrum map
+      </button>
+      <span class="srcline" id="srcline"></span>
+    </div>
+    <div class="ubar" id="ubar" hidden>
+      <span id="ubarText"></span>
+      <button class="btn sm" id="ubarBtn" style="margin-left:auto">Reload now</button>
+    </div>
   </section>
 
   <div class="filters" id="filters"></div>
+  <main class="ops" id="ops"></main>
+</div>
 
-  <div class="grid">
-    <aside class="rail">
-      <div class="search"><input type="text" id="q" placeholder="Search country or operator…"></div>
-      <h3>Countries</h3>
-      <div class="clist" id="clist"></div>
-      <div style="margin-top:10px" class="editonly" hidden>
-        <button class="btn sm" id="btnAddCountry" style="width:100%">+ Add country</button>
-      </div>
-    </aside>
-    <main class="ops" id="ops"></main>
+<div class="fw" id="chartWin" hidden>
+  <div class="fw-box">
+    <header>
+      <span class="mapicon" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+      <h3>Spectrum map · <span id="fwName"></span></h3>
+      <button class="btn sm" id="fwClose">Close</button>
+    </header>
+    <div class="fw-body"><div class="chart"><div class="chart-inner" id="chart"></div></div></div>
   </div>
 </div>
 
@@ -1494,12 +1575,9 @@ function fmtF(m){ return m>=1000 ? (m/1000).toFixed(m%1000?2:1).replace(/\.0$/,"
    ============================================================ */
 function renderOps(c){
   const host = $("#ops"); host.innerHTML = "";
-  const ql = q.trim().toLowerCase();
-  const ops = c.operators.filter(o => !ql || o.n.toLowerCase().includes(ql) || c.name.toLowerCase().includes(ql));
+  const ops = c.operators;
   if(!ops.length){
-    const e0 = el("div","empty", c.operators.length
-      ? "<h3>Nothing matches that search</h3><p>Clear the search box to see this country again.</p>"
-      : `<h3>${esc(c.name)} is empty</h3>
+    const e0 = el("div","empty", `<h3>${esc(c.name)} is empty</h3>
          <p>Let Claude search the web for its operators and spectrum, or add them by hand.</p>
          <div style="display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap">
            <button class="btn p" data-a="lookup">Auto-fill from the web</button>
@@ -1592,6 +1670,7 @@ function chCell(x){
 function renderList(){
   const host = $("#clist"); host.innerHTML="";
   const ql = q.trim().toLowerCase();
+  let shown = 0;
   DATA.countries.forEach((c,i)=>{
     const hit = !ql || c.name.toLowerCase().includes(ql) || (c.id||"").toLowerCase().includes(ql)
       || c.operators.some(o=>o.n.toLowerCase().includes(ql));
@@ -1599,10 +1678,38 @@ function renderList(){
     const b = el("button","citem"+(i===sel?" sel":""));
     b.innerHTML = `<span class="fl">${c.flag||"🏳"}</span><span>${esc(c.name)}</span>
                    <span class="ct">${c.operators.length}</span>`;
-    b.onclick = ()=>{ sel=i; render(); window.scrollTo({top:0,behavior:"smooth"}); };
+    b.onclick = ()=>{ sel=i; closeCMenu(); render(); window.scrollTo({top:0,behavior:"smooth"}); };
     host.appendChild(b);
+    shown++;
   });
+  $("#qhint").textContent = ql
+    ? `${shown} of ${DATA.countries.length} countries match "${q.trim()}"`
+    : `${DATA.countries.length} countries`;
 }
+
+/* ---------- header dropdown ---------- */
+function openCMenu(){
+  $("#cmenu").hidden = false;
+  $("#cpick").classList.add("open");
+  $("#cpick").setAttribute("aria-expanded","true");
+  const box = $("#q"); box.value = q = ""; renderList(); box.focus();
+}
+function closeCMenu(){
+  $("#cmenu").hidden = true;
+  $("#cpick").classList.remove("open");
+  $("#cpick").setAttribute("aria-expanded","false");
+}
+const cMenuOpen = () => !$("#cmenu").hidden;
+
+/* ---------- floating spectrum map ---------- */
+function openChartWin(){
+  const c = DATA.countries[sel]; if(!c) return;
+  $("#fwName").textContent = c.name;
+  $("#chartWin").hidden = false;
+  renderChart(c);
+}
+function closeChartWin(){ $("#chartWin").hidden = true; }
+const chartWinOpen = () => !$("#chartWin").hidden;
 function renderFilters(){
   const host = $("#filters"); host.innerHTML="";
   TECHS.forEach(t=>{
@@ -1651,7 +1758,10 @@ function render(){
     · <a href="https://www.spectrum-tracker.com/${encodeURIComponent(c.name)}" target="_blank" rel="noopener">spectrum-tracker.com</a>
     · last edited ${esc(DATA.updated||"—")}`;
 
-  renderChart(c); renderOps(c);
+  $("#cpickFlag").textContent = c.flag || "🏳";
+  $("#cpickName").textContent = c.name;
+  if(chartWinOpen()){ $("#fwName").textContent = c.name; renderChart(c); }
+  renderOps(c);
 }
 
 /* ============================================================
@@ -1671,7 +1781,12 @@ function openModal(title, bodyHTML, onSave, saveLabel="Save"){
 }
 function closeModal(){ $("#ovl").hidden = true; $("#modal").innerHTML=""; }
 $("#ovl").addEventListener("click", e=>{ if(e.target.id==="ovl") closeModal(); });
-document.addEventListener("keydown", e=>{ if(e.key==="Escape" && !$("#ovl").hidden) closeModal(); });
+document.addEventListener("keydown", e=>{
+  if(e.key!=="Escape") return;
+  if(!$("#ovl").hidden) return closeModal();
+  if(chartWinOpen()) return closeChartWin();
+  if(cMenuOpen()) return closeCMenu();
+});
 
 const field = (id,label,val,type="text",extra="") =>
   `<div class="f"><label for="${id}">${label}</label><input id="${id}" type="${type}" value="${esc(val??"")}" ${extra}></div>`;
@@ -1874,7 +1989,13 @@ $("#btnTheme").onclick = ()=>{
   document.documentElement.setAttribute("data-theme", cur);
   try{ localStorage.setItem(KEY+"-theme", cur); }catch(e){}
 };
-$("#q").oninput = e=>{ q = e.target.value; renderList(); renderOps(DATA.countries[sel]); };
+$("#q").oninput = e=>{ q = e.target.value; renderList(); };
+$("#cpick").onclick = e=>{ e.stopPropagation(); cMenuOpen() ? closeCMenu() : openCMenu(); };
+$("#cmenu").addEventListener("click", e=>e.stopPropagation());
+document.addEventListener("click", ()=>{ if(cMenuOpen()) closeCMenu(); });
+$("#btnMap").onclick = openChartWin;
+$("#fwClose").onclick = closeChartWin;
+$("#chartWin").addEventListener("click", e=>{ if(e.target.id==="chartWin") closeChartWin(); });
 
 /* ============================================================
    BOOT
@@ -1885,6 +2006,36 @@ try{
   else if(window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches)
     document.documentElement.setAttribute("data-theme","light");
 }catch(e){}
+/* ============================================================
+   LIVE UPDATES
+   The Android shell keeps the page in internal storage and pulls a newer
+   copy from GitHub in the background. These are the hooks it calls.
+   ============================================================ */
+(function(){
+  const bar = $("#ubar"), txt = $("#ubarText"), btn = $("#ubarBtn"), chk = $("#btnUpdate");
+  const inApp = !!(window.Bridge && Bridge.checkUpdate);
+  if(inApp) chk.hidden = false;
+
+  function show(message, action, label){
+    txt.innerHTML = message;
+    btn.hidden = !action;
+    if(action){ btn.textContent = label || "Reload now"; btn.onclick = action; }
+    bar.hidden = false;
+  }
+
+  // called from Java
+  window.__update = function(state, detail){
+    if(state === "checking")  return show("Checking GitHub for a newer version…", null);
+    if(state === "current")   { show("<b>Up to date.</b> This is the latest version on GitHub.", null);
+                                setTimeout(()=>{ bar.hidden = true; }, 4000); return; }
+    if(state === "ready")     return show("<b>A newer version is ready.</b> Your saved data is kept.",
+                                          ()=>{ try{ Bridge.reloadApp(); }catch(e){ location.reload(); } });
+    if(state === "failed")    return show("Could not reach GitHub" + (detail ? " — " + esc(detail) : "") + ".", null);
+  };
+
+  chk.onclick = ()=>{ try{ Bridge.checkUpdate(); }catch(e){ show("Update check is only available in the app.", null); } };
+})();
+
 DATA = load();
 render();
 

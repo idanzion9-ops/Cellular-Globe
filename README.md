@@ -32,6 +32,7 @@ That publishes a GitHub Release with the APK attached.
 
 ```
 app/src/main/assets/index.html    the whole application — one self-contained page
+                                  (also the live-update source)
 app/src/main/java/.../MainActivity.java   WebView host, file picker, export bridge
 .github/workflows/build-apk.yml   the cloud build
 ```
@@ -39,6 +40,26 @@ app/src/main/java/.../MainActivity.java   WebView host, file picker, export brid
 The page is served to the WebView over `https://appassets.androidplatform.net` rather than
 `file://`. That matters for two reasons: browser storage persists reliably against a stable
 origin, and the page is allowed to reach `api.anthropic.com` for the country lookup.
+
+## Live updates
+
+The page is not locked inside the APK. On first run the shell copies it into internal
+storage and serves it from there; on every launch it fetches
+
+```
+https://raw.githubusercontent.com/idanzion9-ops/Cellular-Globe/main/app/src/main/assets/index.html
+```
+
+compares the SHA-256 against the cached copy, and if they differ writes the new one and
+offers a **Reload now** button. **Check for updates** in the toolbar forces the same check.
+
+So editing `index.html` on GitHub updates the running app — no reinstall, no new APK. Both
+copies are served from the same `https://appassets.androidplatform.net` origin, so your
+saved data survives the swap. GitHub's raw CDN caches for a few minutes, so an update can
+take up to about five minutes to appear.
+
+A rebuilt APK is still needed for anything outside the page: the Java shell, the icon,
+permissions or the manifest.
 
 ## Your data
 

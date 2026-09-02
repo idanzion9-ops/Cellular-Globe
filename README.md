@@ -19,14 +19,16 @@ that builds the APK on GitHub's servers.
 4. Unzip it and install `cellular-globe.apk` on the phone. Android will ask you to allow
    installs from that source the first time.
 
-To get a permanent download link instead of a 90-day artifact, push a tag:
+Every push to `main` also refreshes a rolling release called **Latest build**, so the
+Releases page always carries a permanent link to the newest APK. Running the workflow by
+hand from the Actions tab produces only the 90-day artifact, not a release.
+
+For a permanent, versioned release, push a tag:
 
 ```
 git tag v1.0.0
 git push origin v1.0.0
 ```
-
-That publishes a GitHub Release with the APK attached.
 
 ## What is inside
 

@@ -51,7 +51,24 @@ jobs:
           if-no-files-found: error
           retention-days: 90
 
-      - name: Attach the APK to a release
+      # Every push to main refreshes a rolling release, so there is always one
+      # permanent download link that is never older than the last commit.
+      - name: Refresh the rolling "latest" release
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --cleanup-tag --yes || true
+          gh release create latest out/cellular-globe.apk \
+            --title "Latest build" \
+            --prerelease \
+            --notes "Built automatically from \`${{ github.sha }}\` on $(date -u '+%Y-%m-%d %H:%M UTC').
+
+          Install this APK once to pick up shell changes. Edits to \`index.html\` reach an
+          installed app over the air and do not need a reinstall."
+
+      # Pushing a v-tag still cuts a normal, permanent versioned release.
+      - name: Attach the APK to a versioned release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:

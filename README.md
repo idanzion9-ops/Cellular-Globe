@@ -5,7 +5,7 @@ in each country holds, the exact MHz blocks, the absolute channel numbers (ARFCN
 EARFCN, NR-ARFCN), and — the point of the whole thing — whether each block is actually on
 air or just held.
 
-Ships with 63 countries, 207 operators and roughly 1,800 spectrum blocks as a starting dataset. Everything is
+Ships with 64 countries, 210 operators and roughly 1,800 spectrum blocks as a starting dataset. Everything is
 editable in the app, and new countries can be researched from the web.
 
 ## Getting the APK

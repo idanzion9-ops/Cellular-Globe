@@ -15,6 +15,7 @@ jobs:
   build:
     name: Assemble debug APK
     runs-on: ubuntu-latest
+    timeout-minutes: 25
 
     steps:
       - name: Check out the repository
@@ -26,8 +27,25 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up the Android SDK
-        uses: android-actions/setup-android@v3
+      # GitHub's ubuntu runners already ship an Android SDK with its licences
+      # accepted. Re-downloading cmdline-tools and re-running the licence loop is
+      # what stalls, so point Gradle at what is already there and only fetch a
+      # platform if it happens to be missing.
+      - name: Use the preinstalled Android SDK
+        run: |
+          set -eux
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          test -d "$SDK" || { echo "No Android SDK on this runner"; exit 1; }
+          echo "ANDROID_HOME=$SDK"     >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK" >> "$GITHUB_ENV"
+          echo "sdk.dir=$SDK" > local.properties
+          echo "Platforms present:"; ls "$SDK/platforms" || true
+          if [ ! -d "$SDK/platforms/android-34" ]; then
+            echo "android-34 missing, installing it"
+            SDKMAN=$(ls "$SDK"/cmdline-tools/*/bin/sdkmanager 2>/dev/null | head -1)
+            yes | "$SDKMAN" --licenses > /dev/null 2>&1 || true
+            "$SDKMAN" "platforms;android-34" "build-tools;34.0.0"
+          fi
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -35,7 +53,7 @@ jobs:
           gradle-version: '8.7'
 
       - name: Build
-        run: gradle assembleDebug --no-daemon --stacktrace
+        run: gradle assembleDebug --no-daemon --stacktrace --warning-mode=all
 
       - name: Name the APK
         run: |
